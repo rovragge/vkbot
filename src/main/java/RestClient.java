@@ -1,11 +1,9 @@
 
 import org.apache.http.HttpEntity;
-import org.apache.http.client.*;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.*;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -13,15 +11,8 @@ import org.json.simple.parser.JSONParser;
 
 
 public class RestClient {
-
-
-
-
-
-
 //        private static String url = "http://www.apache.org/";
-
-        public  void req(String url) {
+        public int req(String url) {
             // Create an instance of HttpClient.
             CloseableHttpClient httpclient = HttpClients.createDefault();
             HttpGet httpGet = new HttpGet(url);
@@ -38,15 +29,23 @@ public class RestClient {
                 if (entity1 != null) {
                     String retSrc = EntityUtils.toString(entity1);
                     // parsing JSON
-                    JSONObject jsonobj = new JSONObject();
+
                     JSONParser parser = new JSONParser();
                     JSONObject json = (JSONObject) parser.parse(retSrc);
                     json=json;
                     CallbackApiHandler callbackApiHandler = new CallbackApiHandler();
 
-                    String body = retSrc;
-                    JSONArray objects = jsonobj.getString();
-                    callbackApiHandler.parse(body);
+
+                    JSONArray objects = (JSONArray) json.get("updates");
+                    String ts = (String) json.get("ts");
+                    int tts = Integer.parseInt(ts);
+                    return tts;
+//                    for(int i=0; i<objects.size(); i++)
+//                    {
+//                        JSONObject o = (JSONObject) objects.get(i);
+//                        String ss = o.toString();
+//                        callbackApiHandler.parse(ss);
+//                    }
 
                 }
                 EntityUtils.consume(entity1);
@@ -59,7 +58,7 @@ public class RestClient {
 
                 }
             }
-            req(url);
+            return 0;
         }
 
 }
