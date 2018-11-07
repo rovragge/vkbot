@@ -6,4 +6,5 @@ public class CallbackApiHandler extends CallbackApi {
     public void messageNew(Integer groupId, Message message) {
         System.out.println(message.getBody());
     }
+
 }

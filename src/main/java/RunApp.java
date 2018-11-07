@@ -15,10 +15,12 @@ import java.util.Properties;
 public class RunApp {
     public static void main(String[] args) {
 
+        RestClient restClient = new RestClient();
+
         Properties properties = new Properties();
         try {
             properties.load(RunApp.class.getClassLoader().getResourceAsStream("keys.properties"));
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -37,8 +39,9 @@ public class RunApp {
         String server = cont.getServer();
         int ts = cont.getTs();
 
-        String zap = server+"?act=a_check&key="+key+"&ts="+ts+"&wait=25&mode=8&version=3 ";
+        String zap = server+"?act=a_check&key="+key+"&ts="+ts+"&wait=25&mode=8&version=3";
 
+        restClient.req(zap);
 
         try {
             GetLongPollHistoryResponse resp = vkclient.messages().getLongPollHistory(actor).ts(10).execute();
