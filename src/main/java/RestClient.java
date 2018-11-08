@@ -1,63 +1,51 @@
-
-import org.apache.http.HttpEntity;
-
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.*;
-import org.apache.http.util.EntityUtils;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 
 
 public class RestClient {
-//        private static String url = "http://www.apache.org/";
+
         public int req(String url) {
             // Create an instance of HttpClient.
             CloseableHttpClient httpclient = HttpClients.createDefault();
             HttpGet httpGet = new HttpGet(url);
-            CloseableHttpResponse response1 = null;
-            try{
-                response1 = httpclient.execute(httpGet);
-            }catch (Exception ex) {}
+            RequestConfig requestConfig = RequestConfig.custom()
+                    .setConnectTimeout(30 * 1000)
+                    .setConnectionRequestTimeout(30 * 1000)
+                    .setSocketTimeout(30 * 1000)
+                    .build();
+            httpGet.setConfig(requestConfig);
+
+            CloseableHttpResponse response = null;
             try {
-                System.out.println(response1.getStatusLine());
-                HttpEntity entity1 = response1.getEntity();
-                // do something useful with the response body
+                response = httpclient.execute(httpGet);
+                System.out.println(response.getStatusLine());
+                ResponseHandler<String> handler = new BasicResponseHandler();
+                String body = handler.handleResponse(response);
 
-                // and ensure it is fully consumed
-                if (entity1 != null) {
-                    String retSrc = EntityUtils.toString(entity1);
-                    // parsing JSON
-
-                    JSONParser parser = new JSONParser();
-                    JSONObject json = (JSONObject) parser.parse(retSrc);
-                    json=json;
-                    CallbackApiHandler callbackApiHandler = new CallbackApiHandler();
-
-
-                    JSONArray objects = (JSONArray) json.get("updates");
-                    String ts = (String) json.get("ts");
-                    int tts = Integer.parseInt(ts);
-                    return tts;
-//                    for(int i=0; i<objects.size(); i++)
-//                    {
-//                        JSONObject o = (JSONObject) objects.get(i);
-//                        String ss = o.toString();
-//                        callbackApiHandler.parse(ss);
-//                    }
-
+                if (body != null) {
+                    // normal json parsing
+                    JsonObject parsedJson = new JsonParser().parse(body).getAsJsonObject();
+//                    CallbackApiHandler callbackApiHandler = new CallbackApiHandler();
+                    Integer ts = parsedJson.get("ts").getAsInt();
+                    JsonArray updates = parsedJson.get("updates").getAsJsonArray();
+                    for (JsonElement jsonElement : updates){
+                        String update = jsonElement.toString();
+                    }
+                    return ts;
                 }
-                EntityUtils.consume(entity1);
-            } catch(Exception ex){}
-            finally {
-                try {
-                    response1.close();
-                }
-                catch (Exception ex){
-
-                }
+            } catch(Exception ex){
+                ex.printStackTrace();
             }
+
             return 0;
         }
 

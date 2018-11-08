@@ -1,21 +1,18 @@
-import com.vk.api.sdk.client.TransportClient;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.GroupActor;
 import com.vk.api.sdk.httpclient.HttpTransportClient;
-import com.vk.api.sdk.objects.GroupAuthResponse;
 import com.vk.api.sdk.objects.groups.responses.GetLongPollServerResponse;
 import com.vk.api.sdk.objects.messages.LongpollMessages;
 import com.vk.api.sdk.objects.messages.Message;
 import com.vk.api.sdk.objects.messages.responses.GetLongPollHistoryResponse;
+import org.apache.http.client.utils.URIBuilder;
 
-import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Properties;
 
 public class RunApp {
     public static void main(String[] args) {
-
-        RestClient restClient = new RestClient();
 
         Properties properties = new Properties();
         try {
@@ -24,23 +21,14 @@ public class RunApp {
             e.printStackTrace();
         }
 
+        final int GROUP_ID = 173460334;
+        final String GROUP_TOKEN = properties.getProperty("group_access_token");
+
+        RestClient restClient = new RestClient();
+
         VkApiClient vkclient = new VkApiClient(HttpTransportClient.getInstance());
 
-        int groupId = 173460334;
-
-        GroupActor actor = new GroupActor(groupId, properties.getProperty("group_access_token"));
-
-
-        try {
-            GetLongPollHistoryResponse resp = vkclient.messages().getLongPollHistory(actor).ts(58).execute();
-            LongpollMessages mes = resp.getMessages();
-            List<Message> meslist = mes.getMessages();
-            Message m = meslist.get(0);
-            String body = m.getBody();
-            System.out.println(body);
-        } catch (Exception ex) {
-            String s = ex.getLocalizedMessage();
-        }
+        GroupActor actor = new GroupActor(GROUP_ID, GROUP_TOKEN);
 
         while(true){
             GetLongPollServerResponse cont = null;
@@ -53,10 +41,25 @@ public class RunApp {
             String server = cont.getServer();
             int ts = cont.getTs();
 
-            String zap = server+"?act=a_check&key="+key+"&ts="+ts+"&wait=25&mode=8&version=3";
-            int newTs = restClient.req(zap);
+            String uri;
+            try {
+                uri = new URIBuilder()
+                        .setPath(server)
+                        .addParameter("act","a_check")
+                        .addParameter("key",key)
+                        .addParameter("ts", String.valueOf(ts))
+                        .addParameter("wait", "25")
+                        .addParameter("mode","8")
+                        .addParameter("version", "3")
+                        .build().toString();
+            } catch (URISyntaxException e) {
+                uri = null;
+                e.printStackTrace();
+            }
 
-            if (newTs > ts) {
+            int newTs = restClient.req(uri);
+
+            if (true) {
                 try {
                     GetLongPollHistoryResponse resp = vkclient.messages().getLongPollHistory(actor).ts(newTs).execute();
                     LongpollMessages mes = resp.getMessages();
