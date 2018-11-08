@@ -12,8 +12,9 @@ import org.apache.http.impl.client.HttpClients;
 
 
 public class RestClient {
+    CallbackApiHandler callHandler = new CallbackApiHandler();
 
-        public int req(String url) {
+        public int req(String url, int oldTs) {
             // Create an instance of HttpClient.
             CloseableHttpClient httpclient = HttpClients.createDefault();
             HttpGet httpGet = new HttpGet(url);
@@ -34,19 +35,20 @@ public class RestClient {
                 if (body != null) {
                     // normal json parsing
                     JsonObject parsedJson = new JsonParser().parse(body).getAsJsonObject();
-//                    CallbackApiHandler callbackApiHandler = new CallbackApiHandler();
                     Integer ts = parsedJson.get("ts").getAsInt();
                     JsonArray updates = parsedJson.get("updates").getAsJsonArray();
                     for (JsonElement jsonElement : updates){
                         String update = jsonElement.toString();
+                        update = update.replace("\"important\":false","\"important\":\"false\"");
+                        update = update.replace("\"important\":true","\"important\":\"true\"");
+                        Boolean  a = callHandler.parse(update);
                     }
                     return ts;
                 }
             } catch(Exception ex){
                 ex.printStackTrace();
             }
-
-            return 0;
+            return oldTs;
         }
 
 }
