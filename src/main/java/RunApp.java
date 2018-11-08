@@ -57,7 +57,7 @@ public class RunApp {
                 e.printStackTrace();
             }
 
-            int newTs = restClient.req(uri);
+            int newTs = restClient.req(uri, ts);
 
             if (true) {
                 try {

@@ -1,3 +1,5 @@
+import dao.UserDao;
+import model.User;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
@@ -14,10 +16,23 @@ public class EntryPoint {
 
         AsyncUpdateHandler asyncUpdateHandler = new AsyncUpdateHandler();
         httpclient.execute(httpGet, asyncUpdateHandler);
-
         while (true) {
             // do nothing and waiting for response
         }
+    }
+
+    @Test
+    public void hibernateTest(){
+        //SAVE USER
+        User user = new User();
+        user.setName("asdasdasd");
+        UserDao userDao = new UserDao();
+        userDao.save(user);
+
+
+        //GET USER
+        User user1 = userDao.findById(1);
+        int bp = 42;
     }
 
 }
