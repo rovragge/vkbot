@@ -38,10 +38,10 @@ public class RestClient {
                     Integer ts = parsedJson.get("ts").getAsInt();
                     JsonArray updates = parsedJson.get("updates").getAsJsonArray();
                     for (JsonElement jsonElement : updates){
-                        String update = jsonElement.toString();
-                        update = update.replace("\"important\":false","\"important\":\"false\"");
-                        update = update.replace("\"important\":true","\"important\":\"true\"");
-                        Boolean  a = callHandler.parse(update);
+                        JsonObject update = jsonElement.getAsJsonObject();
+                        Boolean a = callHandler.parse(update);
+//                        update = update.replace("\"important\":false","\"important\":\"false\"");
+//                        update = update.replace("\"important\":true","\"important\":\"true\"");
                     }
                     return ts;
                 }
