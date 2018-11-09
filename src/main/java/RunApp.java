@@ -12,8 +12,11 @@ import java.util.List;
 import java.util.Properties;
 
 public class RunApp {
-    public static void main(String[] args) {
 
+
+
+    public static void main(String[] args) {
+        int curTS = 109;
         Properties properties = new Properties();
         try {
             properties.load(RunApp.class.getClassLoader().getResourceAsStream("keys.properties"));
@@ -39,39 +42,49 @@ public class RunApp {
             }
             String key = cont.getKey();
             String server = cont.getServer();
+
+
             int ts = cont.getTs();
 
-            String uri;
-            try {
-                uri = new URIBuilder()
-                        .setPath(server)
-                        .addParameter("act","a_check")
-                        .addParameter("key",key)
-                        .addParameter("ts", String.valueOf(ts))
-                        .addParameter("wait", "25")
-                        .addParameter("mode","8")
-                        .addParameter("version", "3")
-                        .build().toString();
-            } catch (URISyntaxException e) {
-                uri = null;
-                e.printStackTrace();
-            }
 
-            int newTs = restClient.req(uri, ts);
-
-            if (true) {
+            if (ts > curTS) {
+                String uri;
                 try {
-                    GetLongPollHistoryResponse resp = vkclient.messages().getLongPollHistory(actor).ts(newTs).execute();
-                    LongpollMessages mes = resp.getMessages();
-                    List<Message> meslist = mes.getMessages();
-                    Message m = meslist.get(0);
-                    String body = m.getBody();
-                    System.out.println(body);
-                } catch (Exception ex) {
-                    String s = ex.getLocalizedMessage();
+                    uri = new URIBuilder()
+                            .setPath(server)
+                            .addParameter("act","a_check")
+                            .addParameter("key",key)
+                            .addParameter("ts", String.valueOf(curTS))
+                            .addParameter("wait", "25")
+                            .addParameter("mode","8")
+                            .addParameter("version", "3")
+                            .build().toString();
+                } catch (URISyntaxException e) {
+                    uri = null;
+                    e.printStackTrace();
                 }
+
+                curTS = restClient.req(uri, ts);
             }
         }
+    }
+}
+
+
+//
+//            if (true) {
+//                try {
+//                    GetLongPollHistoryResponse resp = vkclient.messages().getLongPollHistory(actor).ts(newTs).execute();
+//                    LongpollMessages mes = resp.getMessages();
+//                    List<Message> meslist = mes.getMessages();
+//                    Message m = meslist.get(0);
+//                    String body = m.getBody();
+//                    System.out.println(body);
+//                } catch (Exception ex) {
+//                    String s = ex.getLocalizedMessage();
+//                }
+//            }
+
 
 
 
@@ -138,7 +151,7 @@ public class RunApp {
 //        }
 
 
-    }
+
 //    public static void main2() {
 //
 //        Properties properties = new Properties();
@@ -174,7 +187,7 @@ public class RunApp {
 //        }
 //        String aa = cont.getKey();
 //    }
-}
+
 
 
 

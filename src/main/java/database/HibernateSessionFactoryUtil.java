@@ -1,5 +1,7 @@
 package database;
 
+import model.DialogStateDB;
+import model.Transitions;
 import model.User;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -19,7 +21,11 @@ public class HibernateSessionFactoryUtil {
                 Properties properties = new Properties();
                 properties.load(HibernateSessionFactoryUtil.class.getClassLoader().getResourceAsStream("application.properties"));
                 configuration.setProperties(properties);
+
                 configuration.addAnnotatedClass(User.class);
+                configuration.addAnnotatedClass(Transitions.class);
+                configuration.addAnnotatedClass(DialogStateDB.class);
+
                 StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties());
                 sessionFactory = configuration.buildSessionFactory(builder.build());
 

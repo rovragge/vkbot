@@ -1,37 +1,39 @@
 package dao;
 
 import database.HibernateSessionFactoryUtil;
-import model.User;
+import model.DialogState;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-public class UserDao {
-
-    public User findById(Long id) {
-        return HibernateSessionFactoryUtil.getSessionFactory().openSession().get(User.class, id);
+public class DialogStateDao {
+    public DialogState findById(Long id) {
+        return HibernateSessionFactoryUtil.getSessionFactory().openSession().get(DialogState.class, id);
     }
 
-    public void save(User user) {
+    public void save(DialogState DialogState) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx1 = session.beginTransaction();
-        session.save(user);
+        session.save(DialogState);
         tx1.commit();
         session.close();
     }
 
-    public void update(User user) {
+    public void update(DialogState DialogState) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx1 = session.beginTransaction();
-        session.update(user);
+        session.update(DialogState);
         tx1.commit();
         session.close();
     }
 
-    public void delete(User user) {
+    public void delete(DialogState DialogState) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx1 = session.beginTransaction();
-        session.delete(user);
+        session.delete(DialogState);
         tx1.commit();
         session.close();
     }
 }
+
+
+

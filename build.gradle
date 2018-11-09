@@ -18,7 +18,6 @@ dependencies {
     compile 'org.apache.httpcomponents:httpasyncclient:4.1.4'
     compile group: 'org.hibernate', name: 'hibernate-core', version: '5.3.7.Final'
     compile group: 'com.h2database', name: 'h2', version: '1.4.197'
-
     compileOnly 'org.projectlombok:lombok:1.18.0'
 
 }

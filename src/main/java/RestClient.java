@@ -12,6 +12,7 @@ import org.apache.http.impl.client.HttpClients;
 
 
 public class RestClient {
+
     CallbackApiHandler callHandler = new CallbackApiHandler();
 
         public int req(String url, int oldTs) {
@@ -36,12 +37,14 @@ public class RestClient {
                     // normal json parsing
                     JsonObject parsedJson = new JsonParser().parse(body).getAsJsonObject();
                     Integer ts = parsedJson.get("ts").getAsInt();
+                    System.out.println(ts);
                     JsonArray updates = parsedJson.get("updates").getAsJsonArray();
                     for (JsonElement jsonElement : updates){
-                        JsonObject update = jsonElement.getAsJsonObject();
+                        String update = jsonElement.toString();
+
+                        update = update.replace("\"important\":false","\"important\":\"false\"");
+                        update = update.replace("\"important\":true","\"important\":\"true\"");
                         Boolean a = callHandler.parse(update);
-//                        update = update.replace("\"important\":false","\"important\":\"false\"");
-//                        update = update.replace("\"important\":true","\"important\":\"true\"");
                     }
                     return ts;
                 }
