@@ -12,10 +12,7 @@ import org.apache.http.impl.client.HttpClients;
 
 
 public class RestClient {
-
-    CallbackApiHandler callHandler = new CallbackApiHandler();
-
-        public int req(String url, int oldTs) {
+        public int req(CallbackApiHandler callHandler, String url, int oldTs) {
             // Create an instance of HttpClient.
             CloseableHttpClient httpclient = HttpClients.createDefault();
             HttpGet httpGet = new HttpGet(url);

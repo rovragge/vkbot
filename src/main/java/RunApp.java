@@ -17,6 +17,10 @@ public class RunApp {
 
     public static void main(String[] args) {
         int curTS = 109;
+        CallbackApiHandler handler = new CallbackApiHandler();
+
+
+
         Properties properties = new Properties();
         try {
             properties.load(RunApp.class.getClassLoader().getResourceAsStream("keys.properties"));
@@ -32,6 +36,9 @@ public class RunApp {
         VkApiClient vkclient = new VkApiClient(HttpTransportClient.getInstance());
 
         GroupActor actor = new GroupActor(GROUP_ID, GROUP_TOKEN);
+
+        handler.vkclient = vkclient;
+        handler.actor = actor;
 
         while(true){
             GetLongPollServerResponse cont = null;
@@ -64,7 +71,7 @@ public class RunApp {
                     e.printStackTrace();
                 }
 
-                curTS = restClient.req(uri, ts);
+                curTS = restClient.req(handler,uri, ts);
             }
         }
     }
