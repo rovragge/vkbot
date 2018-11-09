@@ -2,21 +2,14 @@ import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.GroupActor;
 import com.vk.api.sdk.httpclient.HttpTransportClient;
 import com.vk.api.sdk.objects.groups.responses.GetLongPollServerResponse;
-import com.vk.api.sdk.objects.messages.LongpollMessages;
-import com.vk.api.sdk.objects.messages.Message;
-import com.vk.api.sdk.objects.messages.responses.GetLongPollHistoryResponse;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.Properties;
 
 public class RunApp {
-
-
-
     public static void main(String[] args) {
-        int curTS = 109;
+        int curTS = 185;
         CallbackApiHandler handler = new CallbackApiHandler();
 
 
@@ -41,11 +34,17 @@ public class RunApp {
         handler.actor = actor;
 
         while(true){
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             GetLongPollServerResponse cont = null;
             try {
                 cont = vkclient.groups().getLongPollServer(actor).execute();
             } catch (Exception ex) {
                 String msg = ex.getLocalizedMessage();
+                System.out.println(msg);
             }
             String key = cont.getKey();
             String server = cont.getServer();

@@ -41,6 +41,7 @@ public class RestClient {
 
                         update = update.replace("\"important\":false","\"important\":\"false\"");
                         update = update.replace("\"important\":true","\"important\":\"true\"");
+                        update = update.replace("text", "body");
                         Boolean a = callHandler.parse(update);
                     }
                     return ts;

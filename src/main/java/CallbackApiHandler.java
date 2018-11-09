@@ -1,7 +1,6 @@
 import com.vk.api.sdk.callback.CallbackApi;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.GroupActor;
-import com.vk.api.sdk.httpclient.HttpTransportClient;
 import com.vk.api.sdk.objects.messages.Message;
 import dao.DialogStateDao;
 import dao.TransitionsDao;
@@ -10,7 +9,6 @@ import model.DialogState;
 import model.Transitions;
 import model.User;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,18 +26,19 @@ public class CallbackApiHandler extends CallbackApi {
 
     @Override
     public void messageNew(Integer groupId, Message message) {
-        System.out.println(message.getBody());
-        Long vkID = Long.valueOf(message.getFromId());
-        User user = userDao.findByVkID(vkID.intValue());
+//        System.out.println(message.toString());
+        Integer vkID = message.getFromId();
+        User user = userDao.findByVkID(vkID);
         if (user == null ){
-            if (message.getBody() == "Начать"){
+            if (message.getBody() != null  && message.getBody().equals("Начать")){
                 user = new User();
-                user.setVkID(vkID.intValue());
+                user.setVkID(vkID);
                 DialogState state = dialogStateDao.findById(1L);
                 user.setDialogState(state);
                 sendMessage(user.getVkID(),state.getMessage(),null);
+                userDao.save(user);
             } else {
-                sendMessage(message.getUserId(),"Иди нахуй я тебя не знаю",null);
+                sendMessage(vkID,"Иди нахуй я тебя не знаю",null);
             }
         } else {
             DialogState state  = user.getDialogState();
@@ -51,9 +50,9 @@ public class CallbackApiHandler extends CallbackApi {
             if (transition.isPresent()) {
                 DialogState target = transition.get().getTargetDialogState();
                 user.setDialogState(target);
-                sendMessage(message.getUserId(),target.getMessage(),null);
+                sendMessage(message.getFromId(),target.getMessage(),null);
             } else {
-                sendMessage(message.getUserId(),"Иди нахуй я тебя не понимаю",null);
+                sendMessage(message.getFromId(),"Иди нахуй я тебя не понимаю",null);
             }
         }
     }
