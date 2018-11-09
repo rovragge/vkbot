@@ -10,26 +10,26 @@ public class DialogStateDao {
         return HibernateSessionFactoryUtil.getSessionFactory().openSession().get(DialogState.class, id);
     }
 
-    public void save(DialogState DialogState) {
+    public void save(DialogState dialogState) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx1 = session.beginTransaction();
-        session.save(DialogState);
+        session.save(dialogState);
         tx1.commit();
         session.close();
     }
 
-    public void update(DialogState DialogState) {
+    public void update(DialogState dialogState) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx1 = session.beginTransaction();
-        session.update(DialogState);
+        session.update(dialogState);
         tx1.commit();
         session.close();
     }
 
-    public void delete(DialogState DialogState) {
+    public void delete(DialogState dialogState) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx1 = session.beginTransaction();
-        session.delete(DialogState);
+        session.delete(dialogState);
         tx1.commit();
         session.close();
     }

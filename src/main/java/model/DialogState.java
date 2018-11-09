@@ -7,7 +7,7 @@ import javax.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name = "dialogstates")
+@Table(name = "dialog_states")
 @Getter
 @Setter
 public class DialogState {

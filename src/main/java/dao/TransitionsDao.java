@@ -10,26 +10,26 @@ public class TransitionsDao {
         return HibernateSessionFactoryUtil.getSessionFactory().openSession().get(Transitions.class, id);
     }
 
-    public void save(Transitions Transitions) {
+    public void save(Transitions transitions) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx1 = session.beginTransaction();
-        session.save(Transitions);
+        session.save(transitions);
         tx1.commit();
         session.close();
     }
 
-    public void update(Transitions Transitions) {
+    public void update(Transitions transitions) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx1 = session.beginTransaction();
-        session.update(Transitions);
+        session.update(transitions);
         tx1.commit();
         session.close();
     }
 
-    public void delete(Transitions Transitions) {
+    public void delete(Transitions transitions) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction tx1 = session.beginTransaction();
-        session.delete(Transitions);
+        session.delete(transitions);
         tx1.commit();
         session.close();
     }

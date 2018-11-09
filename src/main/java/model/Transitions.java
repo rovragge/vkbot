@@ -15,13 +15,13 @@ public class Transitions {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name="state_id")
-    private DialogStateDB stateDB ;
+    @JoinColumn(name="dialog_state_id")
+    private DialogState dialogState ;
 
     @Column(name = "regexp")
     private String regexp;
 
     @ManyToOne
-    @JoinColumn(name="target_state_id")
-    private DialogStateDB targetStateDB ;
+    @JoinColumn(name="target_dialog_state_id")
+    private DialogState targetDialogState ;
 }

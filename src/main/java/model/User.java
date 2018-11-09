@@ -19,5 +19,5 @@ public class User {
 
     @ManyToOne
     @JoinColumn(name="state_id")
-    private DialogStateDB stateDB ;
+    private DialogState dialogState;
 }
