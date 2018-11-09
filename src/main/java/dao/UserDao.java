@@ -14,12 +14,13 @@ public class UserDao {
     }
 
     public User findByVkID(Integer vkID){
-        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
-        List users = session.createQuery("from User where vkID = :vkId")
-                .setParameter("vkId", vkID)
-                .list();
-        if (users.isEmpty()) return null;
-        return (User) users.get(0);
+        try (Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession()) {
+            List users = session.createQuery("select u from User u where u.vkID = :vkId")
+                    .setParameter("vkId", vkID)
+                    .list();
+            if (users.isEmpty()) return null;
+            return (User) users.get(0);
+        }
     }
 
     public void save(User user) {
