@@ -23,15 +23,10 @@ public class EntryPoint {
 
     @Test
     public void hibernateTest(){
-        //SAVE USER
-        User user = new User();
-        user.setName("asdasdasd");
+
         UserDao userDao = new UserDao();
-        userDao.save(user);
-
-
         //GET USER
-        User user1 = userDao.findById(1);
+        User user1 = userDao.findByVkID(11);
         int bp = 42;
     }
 

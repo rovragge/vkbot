@@ -21,7 +21,7 @@ public class DialogState {
     @Column(name = "keyboard")
     private String keyboard;
 
-    @OneToMany(mappedBy = "stateDB")
+    @OneToMany(mappedBy = "dialogState")
     private List<Transitions> transitions;
 
 }

@@ -15,9 +15,9 @@ public class User {
     private Long id;
 
     @Column(name = "vk_id")
-    private String vkID;
+    private Integer vkID;
 
     @ManyToOne
-    @JoinColumn(name="state_id")
+    @JoinColumn(name="dialog_state_id")
     private DialogState dialogState;
 }

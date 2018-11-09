@@ -5,10 +5,20 @@ import model.User;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
+import java.util.List;
+
 public class UserDao {
 
     public User findById(Long id) {
         return HibernateSessionFactoryUtil.getSessionFactory().openSession().get(User.class, id);
+    }
+
+    public User findByVkID(Integer vkID){
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        List users = session.createQuery("from User where vkID = :vkId")
+                .setParameter("vkId", vkID)
+                .list();
+        return (User) users.get(0);
     }
 
     public void save(User user) {
