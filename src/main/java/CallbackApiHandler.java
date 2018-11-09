@@ -9,6 +9,7 @@ import model.DialogState;
 import model.Transitions;
 import model.User;
 
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +26,7 @@ public class CallbackApiHandler extends CallbackApi {
     GroupActor actor = null;
 
     @Override
+    @Transactional
     public void messageNew(Integer groupId, Message message) {
 //        System.out.println(message.toString());
         Integer vkID = message.getFromId();

@@ -1,3 +1,4 @@
+import dao.DialogStateDao;
 import dao.UserDao;
 import model.User;
 import org.apache.http.client.methods.HttpGet;
@@ -24,7 +25,12 @@ public class EntryPoint {
     @Test
     public void hibernateTest(){
 
+        DialogStateDao dialogStateDao = new DialogStateDao();
         UserDao userDao = new UserDao();
+        User user = new User();
+        user.setVkID(123123);
+        user.setDialogState(dialogStateDao.findById(1L));
+        userDao.save(user);
         //GET USER
         User user1 = userDao.findByVkID(11);
         int bp = 42;
