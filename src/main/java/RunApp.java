@@ -2,6 +2,7 @@ import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.GroupActor;
 import com.vk.api.sdk.httpclient.HttpTransportClient;
 import com.vk.api.sdk.objects.groups.responses.GetLongPollServerResponse;
+import model.SysSetings;
 import org.apache.http.client.utils.URIBuilder;
 
 import java.net.URISyntaxException;
@@ -9,7 +10,8 @@ import java.util.Properties;
 
 public class RunApp {
     public static void main(String[] args) {
-        int curTS = 185;
+        SysSetings set = SysSetings.getSysSetings();
+        int curTS = set.TS;
         CallbackApiHandler handler = new CallbackApiHandler();
 
 
@@ -71,6 +73,8 @@ public class RunApp {
                 }
 
                 curTS = restClient.req(handler,uri, ts);
+                set.TS = ts;
+                set.saveSettings();
             }
         }
     }

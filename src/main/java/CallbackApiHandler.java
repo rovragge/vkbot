@@ -3,9 +3,11 @@ import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.GroupActor;
 import com.vk.api.sdk.objects.messages.Message;
 import dao.DialogStateDao;
+import dao.MessageVKDao;
 import dao.TransitionsDao;
 import dao.UserDao;
 import model.DialogState;
+import model.MessageVK;
 import model.Transitions;
 import model.User;
 
@@ -19,6 +21,7 @@ public class CallbackApiHandler extends CallbackApi {
     private UserDao userDao = new UserDao();
     private TransitionsDao transitionsDao = new TransitionsDao();
     private DialogStateDao dialogStateDao = new DialogStateDao();
+    private MessageVKDao messageDao = new MessageVKDao();
 
 
     VkApiClient vkclient = null;
@@ -30,7 +33,7 @@ public class CallbackApiHandler extends CallbackApi {
     public void messageNew(Integer groupId, Message message) {
 //        System.out.println(message.toString());
         Integer vkID = message.getFromId();
-        User user = userDao.findByVkID(vkID);
+        User user = userDao.findById(3L);
         if (user == null ){
             if (message.getBody() != null  && message.getBody().equals("Начать")){
                 user = new User();
@@ -39,10 +42,16 @@ public class CallbackApiHandler extends CallbackApi {
                 user.setDialogState(state);
                 sendMessage(user.getVkID(),state.getMessage(),null);
                 userDao.save(user);
+                saveMessage(message.getId(),message.getBody(),user);
             } else {
                 sendMessage(vkID,"Иди нахуй я тебя не знаю",null);
             }
         } else {
+
+            if (user.getSecretLength() == 0) {
+                sendMessage(message.getFromId(),"secret length == 0 ",null);
+            }
+
             DialogState state  = user.getDialogState();
             List<Transitions> transitions = state.getTransitions();
             String mes = message.getBody();
@@ -56,9 +65,18 @@ public class CallbackApiHandler extends CallbackApi {
             } else {
                 sendMessage(message.getFromId(),"Иди нахуй я тебя не понимаю",null);
             }
+            saveMessage(message.getId(),message.getBody(),user);
         }
     }
 
+
+    public void saveMessage(Integer id, String text, User user) {
+        MessageVK message = new MessageVK();
+        message.setMessageId(id);
+        message.setContent(text);
+        message.setUser(user);
+        messageDao.save(message);
+    }
 
     public void sendMessage(int userId,String message, String kb) {
             try {

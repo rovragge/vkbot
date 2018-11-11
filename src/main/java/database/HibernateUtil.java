@@ -1,6 +1,7 @@
 package database;
 
 import model.DialogState;
+import model.MessageVK;
 import model.Transitions;
 import model.User;
 import org.hibernate.SessionFactory;
@@ -17,10 +18,10 @@ public class HibernateUtil {
         if (sessionFactory == null) {
             try {
                 Configuration configuration = new Configuration();
-
                 configuration.addAnnotatedClass(User.class);
                 configuration.addAnnotatedClass(Transitions.class);
                 configuration.addAnnotatedClass(DialogState.class);
+                configuration.addAnnotatedClass(MessageVK.class);
 
                 StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties());
                 sessionFactory = configuration.buildSessionFactory(builder.build());
