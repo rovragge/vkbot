@@ -47,71 +47,82 @@ public class CallbackApiHandler extends CallbackApi {
                 sendMessage(vkID,"Иди нахуй я тебя не знаю",null);
             }
         } else {
-
-            DialogState state  = user.getDialogState();
-            List<Transitions> transitions = state.getTransitions();
-            String mes = message.getBody();
-            Optional<Transitions> transition = transitions.stream()
-                    .filter(tr -> tr.getRegexp().equals(mes)).findFirst();
-
-            if (transition.isPresent()) {
-                DialogState target = transition.get().getTargetDialogState();
-
-
-//                if(transition.)
-                
-
-                user.setDialogState(target);
-                sendMessage(message.getFromId(),target.getMessage(),null);
-            } else {
-                sendMessage(message.getFromId(),"Иди нахуй я тебя не понимаю",null);
+            if (user.getDialogState() == null) {
+                sendMessage(vkID,"Ты ломаешь меня, но я верну тебя к истокам",null);
+                DialogState state = dialogStateDao.findById(1L);
+                user.setDialogState(state);
+                sendMessage(vkID,state.getMessage(),null);
+                userDao.save(user);
+                return;
             }
-            saveMessage(message.getId(),message.getBody(),user);
 
 
+            if (user.getSecretLength()==0) {
 
-            if (user.getSecretLength() == 0) {
-                sendMessage(message.getFromId(),"secret length == 0 ",null);
-                sendMessage(message.getFromId(),"enter secret zone for length 4",null);
 
-                Random random = new Random();
-                JsonObject obj = new JsonObject();
-               Set<Integer> list = new HashSet<>();
-               JsonObject encode = new JsonObject();
-                JsonObject decode = new JsonObject();
-                for(int i=0;i<9;i++){
+                DialogState state = user.getDialogState();
+                List<Transitions> transitions = state.getTransitions();
+                String mes = message.getBody();
+                Optional<Transitions> transition = transitions.stream()
+                        .filter(tr -> tr.getRegexp().equals(mes)).findFirst();
+
+                if (transition.isPresent()) {
+                    DialogState target = transition.get().getTargetDialogState();
+
+
+                    if (transition.get().getAuth()) {
+                        //enter auth mode
+                        sendMessage(message.getFromId(), "secret length == 0 ", null);
+                        sendMessage(message.getFromId(), "enter secret zone for length 4", null);
+
+                        Random random = new Random();
+                        JsonObject obj = new JsonObject();
+                        Set<Integer> list = new HashSet<>();
+                        JsonObject encode = new JsonObject();
+                        JsonObject decode = new JsonObject();
+                        for (int i = 0; i < 9; i++) {
 
 
 //                    while (!list.add(random.nextInt())) {}
-                    int rnd = 0;
-                    do {
-                        rnd = random.nextInt();
-                    } while (!list.add(rnd));
+                            int rnd = 0;
+                            do {
+                                rnd = random.nextInt();
+                            } while (!list.add(rnd));
 
-                    encode.addProperty(String.valueOf(i+1),String.valueOf(rnd));
-                    decode.addProperty(String.valueOf(rnd),String.valueOf(i+1));
-                }
+                            encode.addProperty(String.valueOf(i + 1), String.valueOf(rnd));
+                            decode.addProperty(String.valueOf(rnd), String.valueOf(i + 1));
+                        }
 
-                obj.add("encode",encode);
-                obj.add("decode",decode);
-                int n = 9999 -1111 + 1;
-                int i = random.nextInt() % n;
-                int randomNum = 1111 +  Math.abs(i);
-                String keyboard = KeyboardFabric.generateSecretKeyBoard(obj.get("encode").getAsJsonObject());
-                user.setSecret("");
-                user.setSecretExpected(String.valueOf(randomNum));
-                user.setSecretLength(4);
-                user.setSecretKeys(obj.toString());
-                user.setSecretKeyboard(keyboard);
+                        obj.add("encode", encode);
+                        obj.add("decode", decode);
+                        int n = 9999 - 1111 + 1;
+                        int i = random.nextInt() % n;
+                        int randomNum = 1111 + Math.abs(i);
+                        String keyboard = KeyboardFabric.generateSecretKeyBoard(obj.get("encode").getAsJsonObject());
+                        user.setSecret("");
+                        user.setSecretExpected(String.valueOf(randomNum));
+                        user.setSecretLength(4);
+                        user.setSecretTargetState(target);
+                        user.setSecretKeys(obj.toString());
+                        user.setSecretKeyboard(keyboard);
 //                userDao.update(user);
-                sendMessage(message.getFromId(),"Enter PIN",keyboard);
-                sendMessage(message.getFromId(),"Expecting "+user.getSecretExpected(),keyboard);
-                sendMessage(message.getFromId(),"Encode",keyboard);
-                sendMessage(message.getFromId(),encode.toString(),keyboard);
-                sendMessage(message.getFromId(),"Decode",keyboard);
-                sendMessage(message.getFromId(),decode.toString(),keyboard);
-            } else {
+                        sendMessage(message.getFromId(), "Enter PIN", keyboard);
+                        sendMessage(message.getFromId(), "Expecting " + user.getSecretExpected(), keyboard);
+                        sendMessage(message.getFromId(), "Encode", keyboard);
+                        sendMessage(message.getFromId(), encode.toString(), keyboard);
+                        sendMessage(message.getFromId(), "Decode", keyboard);
+                        sendMessage(message.getFromId(), decode.toString(), keyboard);
+                    } else {
+                        user.setDialogState(target);
+                        sendMessage(message.getFromId(), target.getMessage(), null);
+                    }
 
+                } else {
+                    sendMessage(message.getFromId(), "Иди нахуй я тебя не понимаю", null);
+                    sendMessage(message.getFromId(), "Ты как бы тут", null);
+                    sendMessage(message.getFromId(), user.getDialogState().getMessage(), null);
+                }
+            } else {
                 String strPayload = message.getActionText();
                 JsonParser jsonParser = new JsonParser();
                 String payload = jsonParser.parse(strPayload).getAsJsonObject().get("val").getAsString();
@@ -123,10 +134,15 @@ public class CallbackApiHandler extends CallbackApi {
                 if (user.getSecretLength()-1 == 0) {
                     if (user.getSecret().equals(user.getSecretExpected())){
                         sendMessage(vkID,"Велком брат",null);
+                        user.setDialogState(user.getSecretTargetState());
+                        sendMessage(message.getFromId(), user.getDialogState().getMessage(), null);
                     } else {
                         sendMessage(vkID,"Пароль выучи сука",null);
                         sendMessage(vkID,"Надо было" + user.getSecretExpected(),null);
                         sendMessage(vkID,"А ты ввел" + user.getSecret(),null);
+                        sendMessage(vkID,"Сиди где сидел" ,null);
+                        sendMessage(message.getFromId(), "Ты как бы тут", null);
+                        sendMessage(message.getFromId(), user.getDialogState().getMessage(), null);
                     }
                     user.setSecretLength(0);
                 } else {
@@ -134,12 +150,9 @@ public class CallbackApiHandler extends CallbackApi {
 
                     sendMessage(vkID,"Осталось ещзе "+String.valueOf(user.getSecretLength())+" символов",user.getSecretKeyboard());
                 }
-
             }
+            saveMessage(message.getId(),message.getBody(),user);
             userDao.update(user);
-
-
-
         }
     }
 
@@ -167,12 +180,13 @@ public class CallbackApiHandler extends CallbackApi {
                             .message(message)
                             .peerId(userId)
                             .userId(userId)
+                            .unsafeParam("keyboard",KeyboardFabric.generateEmptyKeyBoard())
                             .execute();
                 }
 
         } catch(Exception ex) {
-
             String mmm = ex.getLocalizedMessage();
+            System.out.println(mmm);
         }
     }
 

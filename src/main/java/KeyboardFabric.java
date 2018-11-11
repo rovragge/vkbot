@@ -34,6 +34,10 @@ public class KeyboardFabric {
            return keyboard.toString();
        }
 
+    public static String generateEmptyKeyBoard(){
+           return "{\"buttons\":[],\"one_time\":true}";
+    }
+
 //    public static String kb = " { \n" +
 //        "    \"one_time\": false, \n" +
 //        "    \"buttons\": [ [\n" +
