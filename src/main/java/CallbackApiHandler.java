@@ -8,13 +8,11 @@ import dao.DialogStateDao;
 import dao.MessageVKDao;
 import dao.TransitionsDao;
 import dao.UserDao;
-import javafx.animation.Transition;
 import model.DialogState;
 import model.MessageVK;
 import model.Transitions;
 import model.User;
 
-import javax.transaction.Transactional;
 import java.util.*;
 
 public class CallbackApiHandler extends CallbackApi {
@@ -30,7 +28,6 @@ public class CallbackApiHandler extends CallbackApi {
     GroupActor actor = null;
 
     @Override
-    @Transactional
     public void messageNew(Integer groupId, Message message) {
 //        System.out.println(message.toString());
         Integer vkID = message.getFromId();

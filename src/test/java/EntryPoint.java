@@ -1,7 +1,6 @@
 import com.google.gson.JsonObject;
 import dao.DialogStateDao;
 import dao.UserDao;
-import model.SysSetings;
 import model.User;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
