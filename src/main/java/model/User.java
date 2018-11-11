@@ -2,6 +2,8 @@ package model;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.util.List;
@@ -23,6 +25,7 @@ public class User {
     private DialogState dialogState ;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @LazyCollection(LazyCollectionOption.FALSE)
     private List<MessageVK> messages;
 
     @Column(name = "secret")

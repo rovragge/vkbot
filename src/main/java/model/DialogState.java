@@ -2,6 +2,8 @@ package model;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.util.List;
@@ -22,6 +24,7 @@ public class DialogState {
     private String keyboard;
 
     @OneToMany(mappedBy = "dialogState", fetch = FetchType.EAGER)
+    @LazyCollection(LazyCollectionOption.FALSE)
     private List<Transitions> transitions;
 
 }
