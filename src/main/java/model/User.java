@@ -1,8 +1,10 @@
 package model;
 
+import database.HibernateUtil;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.Hibernate;
+import org.hibernate.Session;
 
 import javax.persistence.*;
 import java.util.List;
@@ -29,6 +31,9 @@ public class User {
     @Column(name = "secret")
     private String secret;
 
+    @Column(name = "secret_expected")
+    private String secretExpected;
+
     @Column(name = "secret_keyboard")
     private String secretKeyboard;
 
@@ -38,9 +43,15 @@ public class User {
     @Column(name = "secret_length")
     private Integer secretLength;
 
-    public List<MessageVK> getMessages(){
-        Hibernate.initialize(messages);
-        return messages;
-    }
+    @ManyToOne
+    @JoinColumn(name="secret_target_state")
+    private DialogState secretTargetState ;
+
+//    public List<MessageVK> getMessages(){
+//        Session session = HibernateUtil.getSessionFactory().openSession();
+//        Hibernate.initialize(messages);
+//        session.close();
+//        return messages;
+//    }
 
 }

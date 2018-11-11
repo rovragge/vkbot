@@ -1,3 +1,5 @@
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.vk.api.sdk.callback.CallbackApi;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.GroupActor;
@@ -12,11 +14,9 @@ import model.Transitions;
 import model.User;
 
 import javax.transaction.Transactional;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class CallbackApiHandler extends CallbackApi {
-
 
     private UserDao userDao = new UserDao();
     private TransitionsDao transitionsDao = new TransitionsDao();
@@ -48,13 +48,6 @@ public class CallbackApiHandler extends CallbackApi {
             }
         } else {
 
-            if (user.getSecretLength() == 0) {
-                sendMessage(message.getFromId(),"secret length == 0 ",null);
-                sendMessage(message.getFromId(),"enter secret zone for length 4",null);
-                sendMessage(message.getFromId(),"enter secret zone for length 4",KeyboardFabric.kb);
-
-            }
-
             DialogState state  = user.getDialogState();
             List<Transitions> transitions = state.getTransitions();
             String mes = message.getBody();
@@ -63,12 +56,90 @@ public class CallbackApiHandler extends CallbackApi {
 
             if (transition.isPresent()) {
                 DialogState target = transition.get().getTargetDialogState();
+
+
+//                if(transition.)
+                
+
                 user.setDialogState(target);
                 sendMessage(message.getFromId(),target.getMessage(),null);
             } else {
                 sendMessage(message.getFromId(),"Иди нахуй я тебя не понимаю",null);
             }
             saveMessage(message.getId(),message.getBody(),user);
+
+
+
+            if (user.getSecretLength() == 0) {
+                sendMessage(message.getFromId(),"secret length == 0 ",null);
+                sendMessage(message.getFromId(),"enter secret zone for length 4",null);
+
+                Random random = new Random();
+                JsonObject obj = new JsonObject();
+               Set<Integer> list = new HashSet<>();
+               JsonObject encode = new JsonObject();
+                JsonObject decode = new JsonObject();
+                for(int i=0;i<9;i++){
+
+
+//                    while (!list.add(random.nextInt())) {}
+                    int rnd = 0;
+                    do {
+                        rnd = random.nextInt();
+                    } while (!list.add(rnd));
+
+                    encode.addProperty(String.valueOf(i+1),String.valueOf(rnd));
+                    decode.addProperty(String.valueOf(rnd),String.valueOf(i+1));
+                }
+
+                obj.add("encode",encode);
+                obj.add("decode",decode);
+                int n = 9999 -1111 + 1;
+                int i = random.nextInt() % n;
+                int randomNum = 1111 +  Math.abs(i);
+                String keyboard = KeyboardFabric.generateSecretKeyBoard(obj.get("encode").getAsJsonObject());
+                user.setSecret("");
+                user.setSecretExpected(String.valueOf(randomNum));
+                user.setSecretLength(4);
+                user.setSecretKeys(obj.toString());
+                user.setSecretKeyboard(keyboard);
+//                userDao.update(user);
+                sendMessage(message.getFromId(),"Enter PIN",keyboard);
+                sendMessage(message.getFromId(),"Expecting "+user.getSecretExpected(),keyboard);
+                sendMessage(message.getFromId(),"Encode",keyboard);
+                sendMessage(message.getFromId(),encode.toString(),keyboard);
+                sendMessage(message.getFromId(),"Decode",keyboard);
+                sendMessage(message.getFromId(),decode.toString(),keyboard);
+            } else {
+
+                String strPayload = message.getActionText();
+                JsonParser jsonParser = new JsonParser();
+                String payload = jsonParser.parse(strPayload).getAsJsonObject().get("val").getAsString();
+
+                String strKeys = user.getSecretKeys();
+                String key = jsonParser.parse(strKeys).getAsJsonObject().getAsJsonObject("decode").get(payload).getAsString();
+                user.setSecret(user.getSecret()+key);
+                sendMessage(vkID,"ввел "+payload+"|"+key,user.getSecretKeyboard());
+                if (user.getSecretLength()-1 == 0) {
+                    if (user.getSecret().equals(user.getSecretExpected())){
+                        sendMessage(vkID,"Велком брат",null);
+                    } else {
+                        sendMessage(vkID,"Пароль выучи сука",null);
+                        sendMessage(vkID,"Надо было" + user.getSecretExpected(),null);
+                        sendMessage(vkID,"А ты ввел" + user.getSecret(),null);
+                    }
+                    user.setSecretLength(0);
+                } else {
+                    user.setSecretLength(user.getSecretLength()-1);
+
+                    sendMessage(vkID,"Осталось ещзе "+String.valueOf(user.getSecretLength())+" символов",user.getSecretKeyboard());
+                }
+
+            }
+            userDao.update(user);
+
+
+
         }
     }
 

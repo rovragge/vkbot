@@ -1,5 +1,7 @@
+import com.google.gson.JsonObject;
 import dao.DialogStateDao;
 import dao.UserDao;
+import model.SysSetings;
 import model.User;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
@@ -34,6 +36,18 @@ public class EntryPoint {
         //GET USER
         User user1 = userDao.findByVkID(11);
         int bp = 42;
+    }
+
+    @Test
+    public void keyboardTest(){
+
+        JsonObject obj = new JsonObject();
+        for(int i=0;i<9;i++){
+            obj.addProperty(String.valueOf(i+1),"k"+String.valueOf(i+1));
+        }
+
+        String keyboard = KeyboardFabric.generateSecretKeyBoard(obj);
+        System.out.println(keyboard);
     }
 
 }

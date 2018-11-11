@@ -1,8 +1,10 @@
 package model;
 
+import database.HibernateUtil;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.Hibernate;
+import org.hibernate.Session;
 
 import javax.persistence.*;
 import java.util.List;
@@ -26,7 +28,9 @@ public class DialogState {
     private List<Transitions> transitions;
 
     public List<Transitions> getTransitions(){
+        Session session = HibernateUtil.getSessionFactory().openSession();
         Hibernate.initialize(transitions);
+        session.close();
         return transitions;
     }
 
