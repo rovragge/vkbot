@@ -50,6 +50,9 @@ public class CallbackApiHandler extends CallbackApi {
 
             if (user.getSecretLength() == 0) {
                 sendMessage(message.getFromId(),"secret length == 0 ",null);
+                sendMessage(message.getFromId(),"enter secret zone for length 4",null);
+                sendMessage(message.getFromId(),"enter secret zone for length 4",KeyboardFabric.kb);
+
             }
 
             DialogState state  = user.getDialogState();
