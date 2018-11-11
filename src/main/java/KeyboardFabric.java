@@ -2,9 +2,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import jdk.nashorn.internal.runtime.JSONFunctions;
 
+import java.util.List;
+
 public class KeyboardFabric {
 
-       static JsonObject generateButton(int i,String secret) {
+       static JsonObject generateButton(String i,String secret) {
            JsonObject button = new JsonObject();
 
            JsonObject payload = new JsonObject();
@@ -13,7 +15,7 @@ public class KeyboardFabric {
            JsonObject action = new JsonObject();
            action.addProperty("type","text");
            action.addProperty("payload",payload.toString());
-           action.addProperty("label",String.valueOf(i));
+           action.addProperty("label",i);
            button.add("action",action);
            button.addProperty("color","negative");
            return button;
@@ -26,13 +28,41 @@ public class KeyboardFabric {
            for(int i = 0; i<3;i++){
                JsonArray row = new JsonArray();
                for(int j = 0; j<3;j++){
-                   row.add(generateButton(i*3+j+1,keys.get(String.valueOf(i*3+j+1)).getAsString()));
+                   row.add(generateButton("*",keys.get(String.valueOf(i*3+j+1)).getAsString()));
                }
                cols.add(row);
            }
            keyboard.add("buttons",cols);
            return keyboard.toString();
        }
+
+    public static String generatePublicKeyBoard(List<String> v) {
+
+
+        List<String> variants = v;
+
+        JsonObject keyboard = new JsonObject();
+        keyboard.addProperty("one_time",true);
+        JsonArray cols = new JsonArray();
+
+        int i = 0;
+        JsonArray row = new JsonArray();
+
+        for (String str: v) {
+            if (i == 3){
+                i=0;
+                cols.add(row);
+                row = new JsonArray();
+            }
+
+            row.add(generateButton(str,""));
+            i++;
+
+        }
+        cols.add(row);
+        keyboard.add("buttons",cols);
+        return keyboard.toString();
+    }
 
     public static String generateEmptyKeyBoard(){
            return "{\"buttons\":[],\"one_time\":true}";

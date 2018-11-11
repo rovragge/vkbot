@@ -8,6 +8,7 @@ import dao.DialogStateDao;
 import dao.MessageVKDao;
 import dao.TransitionsDao;
 import dao.UserDao;
+import javafx.animation.Transition;
 import model.DialogState;
 import model.MessageVK;
 import model.Transitions;
@@ -42,17 +43,17 @@ public class CallbackApiHandler extends CallbackApi {
                 user.setDialogState(state);
                 sendMessage(user.getVkID(),state.getMessage(),null);
                 userDao.save(user);
-                saveMessage(message.getId(),message.getBody(),user);
+                sayHello(message.getFromId(),user);
             } else {
                 sendMessage(vkID,"Иди нахуй я тебя не знаю",null);
             }
         } else {
-            if (user.getDialogState() == null) {
+            if (user.getDialogState() == null || message.getBody().equals("Начать") ) {
                 sendMessage(vkID,"Ты ломаешь меня, но я верну тебя к истокам",null);
                 DialogState state = dialogStateDao.findById(1L);
                 user.setDialogState(state);
-                sendMessage(vkID,state.getMessage(),null);
-                userDao.save(user);
+                userDao.update(user);
+                sayHello(message.getFromId(),user);
                 return;
             }
 
@@ -114,13 +115,11 @@ public class CallbackApiHandler extends CallbackApi {
                         sendMessage(message.getFromId(), decode.toString(), keyboard);
                     } else {
                         user.setDialogState(target);
-                        sendMessage(message.getFromId(), target.getMessage(), null);
+                        infoAboutState(message.getFromId(),user);
                     }
 
                 } else {
-                    sendMessage(message.getFromId(), "Иди нахуй я тебя не понимаю", null);
-                    sendMessage(message.getFromId(), "Ты как бы тут", null);
-                    sendMessage(message.getFromId(), user.getDialogState().getMessage(), null);
+                    errorMessageState(message.getFromId(),user);
                 }
             } else {
                 String strPayload = message.getActionText();
@@ -135,14 +134,13 @@ public class CallbackApiHandler extends CallbackApi {
                     if (user.getSecret().equals(user.getSecretExpected())){
                         sendMessage(vkID,"Велком брат",null);
                         user.setDialogState(user.getSecretTargetState());
-                        sendMessage(message.getFromId(), user.getDialogState().getMessage(), null);
+                        infoAboutState(message.getFromId(),user);
                     } else {
                         sendMessage(vkID,"Пароль выучи сука",null);
                         sendMessage(vkID,"Надо было" + user.getSecretExpected(),null);
                         sendMessage(vkID,"А ты ввел" + user.getSecret(),null);
                         sendMessage(vkID,"Сиди где сидел" ,null);
-                        sendMessage(message.getFromId(), "Ты как бы тут", null);
-                        sendMessage(message.getFromId(), user.getDialogState().getMessage(), null);
+                        infoAboutState(message.getFromId(),user);
                     }
                     user.setSecretLength(0);
                 } else {
@@ -156,6 +154,38 @@ public class CallbackApiHandler extends CallbackApi {
         }
     }
 
+    public void sayHello(int id,User user){
+        sendMessage(id, "Привет ты в истоках", KeyboardFabric.generateEmptyKeyBoard());
+        try {
+                vkclient.messages().send(actor)
+                        .message("Вот моя карта")
+                        .peerId(id)
+                        .userId(id)
+                        .unsafeParam("keyboard",KeyboardFabric.generateEmptyKeyBoard())
+                        .attachment("photo-173460334_456239017")
+                        .execute();
+        } catch(Exception ex) {
+            String mmm = ex.getLocalizedMessage();
+            System.out.println(mmm);
+        }
+        infoAboutState(id,user);
+    }
+
+    public void infoAboutState(int id,User user){
+        sendMessage(id, "Ты как бы тут", null);
+        List<Transitions> transitions = user.getDialogState().getTransitions();
+        List<String> keys = new ArrayList<>();
+        for (Transitions tans:transitions) {
+            keys.add(tans.getRegexp());
+        }
+        String kb = KeyboardFabric.generatePublicKeyBoard(keys);
+        sendMessage(id, user.getDialogState().getMessage(), kb);
+    }
+
+    public void errorMessageState(int id,User user){
+        sendMessage(id, "Иди нахуй я тебя не понимаю", null);
+       infoAboutState(id,user);
+    }
 
     public void saveMessage(Integer id, String text, User user) {
         MessageVK message = new MessageVK();
