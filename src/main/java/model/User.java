@@ -2,8 +2,7 @@ package model;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
+import org.hibernate.Hibernate;
 
 import javax.persistence.*;
 import java.util.List;
@@ -24,8 +23,7 @@ public class User {
     @JoinColumn(name="dialog_state_id")
     private DialogState dialogState ;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
-    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(mappedBy = "user")
     private List<MessageVK> messages;
 
     @Column(name = "secret")
@@ -39,5 +37,10 @@ public class User {
 
     @Column(name = "secret_length")
     private Integer secretLength;
+
+    public List<MessageVK> getMessages(){
+        Hibernate.initialize(messages);
+        return messages;
+    }
 
 }
