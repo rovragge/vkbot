@@ -1,10 +1,7 @@
 package model;
 
-import database.HibernateUtil;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.Hibernate;
-import org.hibernate.Session;
 
 import javax.persistence.*;
 import java.util.List;
@@ -24,14 +21,6 @@ public class DialogState {
     @Column(name = "keyboard")
     private String keyboard;
 
-    @OneToMany(mappedBy = "dialogState")
+    @OneToMany(mappedBy = "dialogState", fetch = FetchType.EAGER)
     private List<Transitions> transitions;
-
-    public List<Transitions> getTransitions(){
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Hibernate.initialize(transitions);
-        session.close();
-        return transitions;
-    }
-
 }

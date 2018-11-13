@@ -13,8 +13,6 @@ import model.MessageVK;
 import model.Transitions;
 import model.User;
 
-import javax.swing.text.StyledEditorKit;
-import javax.transaction.Transactional;
 import java.util.*;
 
 public class CallbackApiHandler extends CallbackApi {
@@ -46,6 +44,7 @@ public class CallbackApiHandler extends CallbackApi {
                 user.setVkID(vkID);
                 DialogState state = dialogStateDao.findById(1L);
                 user.setDialogState(state);
+                user.setSecretLength(0);
                 sendMessage(user.getVkID(),state.getMessage(),null);
                 userDao.save(user);
                 sayHello(message.getFromId(),user);
