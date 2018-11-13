@@ -13,6 +13,8 @@ import model.MessageVK;
 import model.Transitions;
 import model.User;
 
+import javax.swing.text.StyledEditorKit;
+import javax.transaction.Transactional;
 import java.util.*;
 
 public class CallbackApiHandler extends CallbackApi {
@@ -21,7 +23,13 @@ public class CallbackApiHandler extends CallbackApi {
     private TransitionsDao transitionsDao = new TransitionsDao();
     private DialogStateDao dialogStateDao = new DialogStateDao();
     private MessageVKDao messageDao = new MessageVKDao();
+    private Boolean d = false;
 
+
+    private String dontKnowYouMessage = "Я тебя не знаю. Скажи мне \"Начать\"";
+    private String gotoBeginingMessage = "Сброс бота в начальное состояние";
+    private String wrongPasswordMessage = "Неверный пароль";
+    private String wrongWordMessage = "Неизвестный запрос";
 
     VkApiClient vkclient = null;
 
@@ -31,7 +39,7 @@ public class CallbackApiHandler extends CallbackApi {
     public void messageNew(Integer groupId, Message message) {
 //        System.out.println(message.toString());
         Integer vkID = message.getFromId();
-        User user = userDao.findById(3L);
+        User user = userDao.findByVkID(vkID);
         if (user == null ){
             if (message.getBody() != null  && message.getBody().equals("Начать")){
                 user = new User();
@@ -42,11 +50,11 @@ public class CallbackApiHandler extends CallbackApi {
                 userDao.save(user);
                 sayHello(message.getFromId(),user);
             } else {
-                sendMessage(vkID,"Иди нахуй я тебя не знаю",null);
+                sendMessage(vkID,dontKnowYouMessage,null);
             }
         } else {
             if (user.getDialogState() == null || message.getBody().equals("Начать") ) {
-                sendMessage(vkID,"Ты ломаешь меня, но я верну тебя к истокам",null);
+                sendMessage(vkID,gotoBeginingMessage,null);
                 DialogState state = dialogStateDao.findById(1L);
                 user.setDialogState(state);
                 userDao.update(user);
@@ -70,8 +78,8 @@ public class CallbackApiHandler extends CallbackApi {
 
                     if (transition.get().getAuth()) {
                         //enter auth mode
-                        sendMessage(message.getFromId(), "secret length == 0 ", null);
-                        sendMessage(message.getFromId(), "enter secret zone for length 4", null);
+                        if (d) sendMessage(message.getFromId(), "secret length == 0 ", null);
+                        if (d) sendMessage(message.getFromId(), "enter secret zone for length 4", null);
 
                         Random random = new Random();
                         JsonObject obj = new JsonObject();
@@ -106,10 +114,10 @@ public class CallbackApiHandler extends CallbackApi {
 //                userDao.update(user);
                         sendMessage(message.getFromId(), "Enter PIN", keyboard);
                         sendMessage(message.getFromId(), "Expecting " + user.getSecretExpected(), keyboard);
-                        sendMessage(message.getFromId(), "Encode", keyboard);
-                        sendMessage(message.getFromId(), encode.toString(), keyboard);
-                        sendMessage(message.getFromId(), "Decode", keyboard);
-                        sendMessage(message.getFromId(), decode.toString(), keyboard);
+                        if (d) sendMessage(message.getFromId(), "Encode", keyboard);
+                        if (d) sendMessage(message.getFromId(), encode.toString(), keyboard);
+                        if (d) sendMessage(message.getFromId(), "Decode", keyboard);
+                        if (d) sendMessage(message.getFromId(), decode.toString(), keyboard);
                     } else {
                         user.setDialogState(target);
                         infoAboutState(message.getFromId(),user);
@@ -126,24 +134,25 @@ public class CallbackApiHandler extends CallbackApi {
                 String strKeys = user.getSecretKeys();
                 String key = jsonParser.parse(strKeys).getAsJsonObject().getAsJsonObject("decode").get(payload).getAsString();
                 user.setSecret(user.getSecret()+key);
-                sendMessage(vkID,"ввел "+payload+"|"+key,user.getSecretKeyboard());
+                if (d) sendMessage(vkID,"ввел "+payload+"|"+key,user.getSecretKeyboard());
                 if (user.getSecretLength()-1 == 0) {
                     if (user.getSecret().equals(user.getSecretExpected())){
                         sendMessage(vkID,"Велком брат",null);
                         user.setDialogState(user.getSecretTargetState());
                         infoAboutState(message.getFromId(),user);
                     } else {
-                        sendMessage(vkID,"Пароль выучи сука",null);
-                        sendMessage(vkID,"Надо было" + user.getSecretExpected(),null);
-                        sendMessage(vkID,"А ты ввел" + user.getSecret(),null);
-                        sendMessage(vkID,"Сиди где сидел" ,null);
+                        if (d) sendMessage(vkID,"Пароль выучи сука",null);
+                        if (d) sendMessage(vkID,"Надо было" + user.getSecretExpected(),null);
+                        if (d) sendMessage(vkID,"А ты ввел" + user.getSecret(),null);
+                        if (d) sendMessage(vkID,"Сиди где сидел" ,null);
+                        sendMessage(vkID,wrongPasswordMessage ,null);
                         infoAboutState(message.getFromId(),user);
                     }
                     user.setSecretLength(0);
                 } else {
                     user.setSecretLength(user.getSecretLength()-1);
 
-                    sendMessage(vkID,"Осталось ещзе "+String.valueOf(user.getSecretLength())+" символов",user.getSecretKeyboard());
+                    sendMessage(vkID,"Осталось еще "+String.valueOf(user.getSecretLength())+" символов",user.getSecretKeyboard());
                 }
             }
             saveMessage(message.getId(),message.getBody(),user);
@@ -169,7 +178,7 @@ public class CallbackApiHandler extends CallbackApi {
     }
 
     public void infoAboutState(int id,User user){
-        sendMessage(id, "Ты как бы тут", null);
+        if (d) sendMessage(id, "Ты как бы тут", null);
         List<Transitions> transitions = user.getDialogState().getTransitions();
         List<String> keys = new ArrayList<>();
         for (Transitions tans:transitions) {
@@ -180,8 +189,8 @@ public class CallbackApiHandler extends CallbackApi {
     }
 
     public void errorMessageState(int id,User user){
-        sendMessage(id, "Иди нахуй я тебя не понимаю", null);
-       infoAboutState(id,user);
+        sendMessage(id, wrongWordMessage, null);
+        infoAboutState(id,user);
     }
 
     public void saveMessage(Integer id, String text, User user) {
