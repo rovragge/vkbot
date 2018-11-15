@@ -23,5 +23,5 @@ public class SummaryResult {
     private Question question;
 
     @Column(name = "answer")
-    private Integer answer;
+    private String answer;
 }

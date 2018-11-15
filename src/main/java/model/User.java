@@ -42,4 +42,8 @@ public class User {
 
     @Column(name = "questions")
     private String questions;
+
+    @ManyToOne
+    @JoinColumn(name="cur_question_id")
+    private Question currentQuestion ;
 }

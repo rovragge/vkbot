@@ -4,16 +4,11 @@ import com.vk.api.sdk.callback.CallbackApi;
 import com.vk.api.sdk.client.VkApiClient;
 import com.vk.api.sdk.client.actors.GroupActor;
 import com.vk.api.sdk.objects.messages.Message;
-import dao.DialogStateDao;
-import dao.MessageVKDao;
-import dao.TransitionsDao;
-import dao.UserDao;
-import model.DialogState;
-import model.MessageVK;
-import model.Transitions;
-import model.User;
+import dao.*;
+import model.*;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class CallbackApiHandler extends CallbackApi {
 
@@ -21,6 +16,8 @@ public class CallbackApiHandler extends CallbackApi {
     private TransitionsDao transitionsDao = new TransitionsDao();
     private DialogStateDao dialogStateDao = new DialogStateDao();
     private MessageVKDao messageDao = new MessageVKDao();
+    private QuestionDao questionDao = new QuestionDao();
+    private SummaryResultDao summaryResultDao = new SummaryResultDao();
     private Boolean d = false;
 
 
@@ -62,34 +59,45 @@ public class CallbackApiHandler extends CallbackApi {
                 return;
             }
 
-            if (user.getDialogState().getId() == 1L) {
+            if (user.getDialogState().getId() == 8L) {
 
-                String[] parts = user.getQuestions().split("|");
+                if (user.getCurrentQuestion() != null) {
+                    SummaryResult res = new SummaryResult();
+                    res.setAnswer(message.getBody());
+                    res.setQuestion(user.getCurrentQuestion());
+                    res.setUser(user);
+                    summaryResultDao.save(res);
+                    user.setCurrentQuestion(null);
+                    userDao.update(user);
+                }
 
-                if (parts.length == 0) {
+                List<String> res = Arrays.asList(user.getQuestions().split(Pattern.quote("|")));
+
+                if (res.size() == 1 && res.get(0).equals("")) {
                     DialogState state = dialogStateDao.findById(1L);
                     user.setDialogState(state);
                     userDao.update(user);
+                    sendMessage(message.getFromId(),"Для Вас нет новых вопросов",null);
                     infoAboutState(message.getFromId(), user);
                 } else {
-                    if (true) {
-                        // answer in progress
 
-                    } else {
-                        String id = 
-                        String[] rest = Arrays.copyOfRange(parts, 1, parts.length-2);
-                        String.join(delimiter, elements);
-                    }
+                        String id = res.get(0);
+
+                        String newQuestions = String.join("|", res.subList(1,res.size()));
+                        user.setQuestions(newQuestions);
+                        userDao.update(user);
+                        Question question = questionDao.findById(Long.parseLong(id));
+                        user.setCurrentQuestion(question);
+                        userDao.update(user);
+                        List<String> ress = Arrays.asList(question.getAnswers().split(Pattern.quote("|")));
+
+                        String kb = KeyboardFabric.generatePublicKeyBoard(ress);
+                        sendMessage(message.getFromId(),question.getQuestion(),kb);
                 }
-
-
-
             } else {
 
 
                 if (user.getSecretLength() == 0) {
-
-
                     DialogState state = user.getDialogState();
                     List<Transitions> transitions = state.getTransitions();
                     String mes = message.getBody();
@@ -144,6 +152,13 @@ public class CallbackApiHandler extends CallbackApi {
                             if (d) sendMessage(message.getFromId(), decode.toString(), keyboard);
                         } else {
                             user.setDialogState(target);
+                            userDao.update(user);
+
+                            if (user.getDialogState().getId() == 8L) {
+                                messageNew(message.getUserId(), message);
+                                return;
+                            }
+
                             infoAboutState(message.getFromId(), user);
                         }
 
