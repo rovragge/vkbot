@@ -39,4 +39,7 @@ public class User {
     @ManyToOne
     @JoinColumn(name="secret_target_state")
     private DialogState secretTargetState ;
+
+    @Column(name = "questions")
+    private String questions;
 }
