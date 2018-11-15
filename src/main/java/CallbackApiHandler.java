@@ -9,6 +9,7 @@ import model.*;
 
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class CallbackApiHandler extends CallbackApi {
 
@@ -72,8 +73,9 @@ public class CallbackApiHandler extends CallbackApi {
                 }
 
                 List<String> res = Arrays.asList(user.getQuestions().split(Pattern.quote("|")));
+                res = res.stream().filter(s -> !s.equals("")).collect(Collectors.toList());
 
-                if (res.size() == 1 && res.get(0).equals("")) {
+                if (res.isEmpty()) {
                     DialogState state = dialogStateDao.findById(1L);
                     user.setDialogState(state);
                     userDao.update(user);
@@ -83,7 +85,7 @@ public class CallbackApiHandler extends CallbackApi {
 
                         String id = res.get(0);
 
-                        String newQuestions = String.join("|", res.subList(1,res.size()));
+                        String newQuestions = res.stream().skip(1).collect(Collectors.joining("|"));
                         user.setQuestions(newQuestions);
                         userDao.update(user);
                         Question question = questionDao.findById(Long.parseLong(id));

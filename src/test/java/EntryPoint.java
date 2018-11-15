@@ -6,6 +6,11 @@ import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 public class EntryPoint {
 
     @Test
@@ -44,4 +49,12 @@ public class EntryPoint {
         System.out.println(keyboard);
     }
 
+    @Test
+    public void splitTest() {
+        String source = "1|2";
+        String pattern = Pattern.quote("|");
+        List<String> res = Arrays.asList(source.split(pattern));
+        res = res.stream().filter(s -> !s.equals("")).collect(Collectors.toList());
+        String nq = res.stream().skip(1).collect(Collectors.joining("|"));
+    }
 }
