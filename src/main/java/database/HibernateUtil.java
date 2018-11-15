@@ -20,6 +20,9 @@ public class HibernateUtil {
                 configuration.addAnnotatedClass(DialogState.class);
                 configuration.addAnnotatedClass(MessageVK.class);
                 configuration.addAnnotatedClass(SysSettings.class);
+                configuration.addAnnotatedClass(SummaryResult.class);
+                configuration.addAnnotatedClass(Question.class);
+
 
                 StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties());
                 sessionFactory = configuration.buildSessionFactory(builder.build());
