@@ -52,7 +52,6 @@ public class CallbackApiHandler extends CallbackApi {
                 sendMessage(vkID,dontKnowYouMessage,null);
             }
         } else {
-
             if (user.getDialogState() == null || message.getBody().equals("Начать") ) {
                 sendMessage(vkID,gotoBeginingMessage,null);
                 DialogState state = dialogStateDao.findById(1L);
@@ -62,104 +61,100 @@ public class CallbackApiHandler extends CallbackApi {
                 return;
             }
 
-            if (user.getDialogState().getId() == 1L) {
-                
-            } else {
 
-                if (user.getSecretLength() == 0) {
+            if (user.getSecretLength()==0) {
 
 
-                    DialogState state = user.getDialogState();
-                    List<Transitions> transitions = state.getTransitions();
-                    String mes = message.getBody();
-                    Optional<Transitions> transition = transitions.stream()
-                            .filter(tr -> tr.getRegexp().equals(mes)).findFirst();
+                DialogState state = user.getDialogState();
+                List<Transitions> transitions = state.getTransitions();
+                String mes = message.getBody();
+                Optional<Transitions> transition = transitions.stream()
+                        .filter(tr -> tr.getRegexp().equals(mes)).findFirst();
 
-                    if (transition.isPresent()) {
-                        DialogState target = transition.get().getTargetDialogState();
+                if (transition.isPresent()) {
+                    DialogState target = transition.get().getTargetDialogState();
 
 
-                        if (transition.get().getAuth()) {
-                            //enter auth mode
-                            if (d) sendMessage(message.getFromId(), "secret length == 0 ", null);
-                            if (d) sendMessage(message.getFromId(), "enter secret zone for length 4", null);
+                    if (transition.get().getAuth()) {
+                        //enter auth mode
+                        if (d) sendMessage(message.getFromId(), "secret length == 0 ", null);
+                        if (d) sendMessage(message.getFromId(), "enter secret zone for length 4", null);
 
-                            Random random = new Random();
-                            JsonObject obj = new JsonObject();
-                            Set<Integer> list = new HashSet<>();
-                            JsonObject encode = new JsonObject();
-                            JsonObject decode = new JsonObject();
-                            for (int i = 0; i < 9; i++) {
+                        Random random = new Random();
+                        JsonObject obj = new JsonObject();
+                        Set<Integer> list = new HashSet<>();
+                        JsonObject encode = new JsonObject();
+                        JsonObject decode = new JsonObject();
+                        for (int i = 0; i < 9; i++) {
 
 
 //                    while (!list.add(random.nextInt())) {}
-                                int rnd = 0;
-                                do {
-                                    rnd = random.nextInt();
-                                } while (!list.add(rnd));
+                            int rnd = 0;
+                            do {
+                                rnd = random.nextInt();
+                            } while (!list.add(rnd));
 
-                                encode.addProperty(String.valueOf(i + 1), String.valueOf(rnd));
-                                decode.addProperty(String.valueOf(rnd), String.valueOf(i + 1));
-                            }
+                            encode.addProperty(String.valueOf(i + 1), String.valueOf(rnd));
+                            decode.addProperty(String.valueOf(rnd), String.valueOf(i + 1));
+                        }
 
-                            obj.add("encode", encode);
-                            obj.add("decode", decode);
-                            int n = 9999 - 1111 + 1;
-                            int i = random.nextInt() % n;
-                            int randomNum = 1111 + Math.abs(i);
-                            String keyboard = KeyboardFabric.generateSecretKeyBoard(obj.get("encode").getAsJsonObject());
-                            user.setSecret("");
-                            user.setSecretExpected(String.valueOf(randomNum));
-                            user.setSecretLength(4);
-                            user.setSecretTargetState(target);
-                            user.setSecretKeys(obj.toString());
-                            user.setSecretKeyboard(keyboard);
+                        obj.add("encode", encode);
+                        obj.add("decode", decode);
+                        int n = 9999 - 1111 + 1;
+                        int i = random.nextInt() % n;
+                        int randomNum = 1111 + Math.abs(i);
+                        String keyboard = KeyboardFabric.generateSecretKeyBoard(obj.get("encode").getAsJsonObject());
+                        user.setSecret("");
+                        user.setSecretExpected(String.valueOf(randomNum));
+                        user.setSecretLength(4);
+                        user.setSecretTargetState(target);
+                        user.setSecretKeys(obj.toString());
+                        user.setSecretKeyboard(keyboard);
 //                userDao.update(user);
-                            sendMessage(message.getFromId(), "Enter PIN", keyboard);
-                            sendMessage(message.getFromId(), "Expecting " + user.getSecretExpected(), keyboard);
-                            if (d) sendMessage(message.getFromId(), "Encode", keyboard);
-                            if (d) sendMessage(message.getFromId(), encode.toString(), keyboard);
-                            if (d) sendMessage(message.getFromId(), "Decode", keyboard);
-                            if (d) sendMessage(message.getFromId(), decode.toString(), keyboard);
-                        } else {
-                            user.setDialogState(target);
-                            infoAboutState(message.getFromId(), user);
-                        }
-
+                        sendMessage(message.getFromId(), "Enter PIN", keyboard);
+                        sendMessage(message.getFromId(), "Expecting " + user.getSecretExpected(), keyboard);
+                        if (d) sendMessage(message.getFromId(), "Encode", keyboard);
+                        if (d) sendMessage(message.getFromId(), encode.toString(), keyboard);
+                        if (d) sendMessage(message.getFromId(), "Decode", keyboard);
+                        if (d) sendMessage(message.getFromId(), decode.toString(), keyboard);
                     } else {
-                        errorMessageState(message.getFromId(), user);
+                        user.setDialogState(target);
+                        infoAboutState(message.getFromId(),user);
                     }
+
                 } else {
-                    String strPayload = message.getActionText();
-                    JsonParser jsonParser = new JsonParser();
-                    String payload = jsonParser.parse(strPayload).getAsJsonObject().get("val").getAsString();
-
-                    String strKeys = user.getSecretKeys();
-                    String key = jsonParser.parse(strKeys).getAsJsonObject().getAsJsonObject("decode").get(payload).getAsString();
-                    user.setSecret(user.getSecret() + key);
-                    if (d) sendMessage(vkID, "ввел " + payload + "|" + key, user.getSecretKeyboard());
-                    if (user.getSecretLength() - 1 == 0) {
-                        if (user.getSecret().equals(user.getSecretExpected())) {
-                            sendMessage(vkID, "Велком брат", null);
-                            user.setDialogState(user.getSecretTargetState());
-                            infoAboutState(message.getFromId(), user);
-                        } else {
-                            if (d) sendMessage(vkID, "Пароль выучи сука", null);
-                            if (d) sendMessage(vkID, "Надо было" + user.getSecretExpected(), null);
-                            if (d) sendMessage(vkID, "А ты ввел" + user.getSecret(), null);
-                            if (d) sendMessage(vkID, "Сиди где сидел", null);
-                            sendMessage(vkID, wrongPasswordMessage, null);
-                            infoAboutState(message.getFromId(), user);
-                        }
-                        user.setSecretLength(0);
-                    } else {
-                        user.setSecretLength(user.getSecretLength() - 1);
-
-                        sendMessage(vkID, "Осталось еще " + String.valueOf(user.getSecretLength()) + " символов", user.getSecretKeyboard());
-                    }
+                    errorMessageState(message.getFromId(),user);
                 }
-                saveMessage(message.getId(), message.getBody(), user);
+            } else {
+                String strPayload = message.getActionText();
+                JsonParser jsonParser = new JsonParser();
+                String payload = jsonParser.parse(strPayload).getAsJsonObject().get("val").getAsString();
+
+                String strKeys = user.getSecretKeys();
+                String key = jsonParser.parse(strKeys).getAsJsonObject().getAsJsonObject("decode").get(payload).getAsString();
+                user.setSecret(user.getSecret()+key);
+                if (d) sendMessage(vkID,"ввел "+payload+"|"+key,user.getSecretKeyboard());
+                if (user.getSecretLength()-1 == 0) {
+                    if (user.getSecret().equals(user.getSecretExpected())){
+                        sendMessage(vkID,"Велком брат",null);
+                        user.setDialogState(user.getSecretTargetState());
+                        infoAboutState(message.getFromId(),user);
+                    } else {
+                        if (d) sendMessage(vkID,"Пароль выучи сука",null);
+                        if (d) sendMessage(vkID,"Надо было" + user.getSecretExpected(),null);
+                        if (d) sendMessage(vkID,"А ты ввел" + user.getSecret(),null);
+                        if (d) sendMessage(vkID,"Сиди где сидел" ,null);
+                        sendMessage(vkID,wrongPasswordMessage ,null);
+                        infoAboutState(message.getFromId(),user);
+                    }
+                    user.setSecretLength(0);
+                } else {
+                    user.setSecretLength(user.getSecretLength()-1);
+
+                    sendMessage(vkID,"Осталось еще "+String.valueOf(user.getSecretLength())+" символов",user.getSecretKeyboard());
+                }
             }
+            saveMessage(message.getId(),message.getBody(),user);
             userDao.update(user);
         }
     }
