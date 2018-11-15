@@ -3,11 +3,10 @@ package dao;
 import database.HibernateUtil;
 import model.User;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 
 import java.util.List;
 
-public class UserDao {
+public class UserDao extends BasicDao{
 
     public User findById(Long id) {
         return HibernateUtil.getSessionFactory().openSession().get(User.class, id);
@@ -20,29 +19,6 @@ public class UserDao {
                     .list();
             if (users.isEmpty()) return null;
             return (User) users.get(0);
-        } }
-
-    public void save(User user) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction tx1 = session.beginTransaction();
-        session.save(user);
-        tx1.commit();
-        session.close();
-    }
-
-    public void update(User user) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction tx1 = session.beginTransaction();
-        session.merge(user);
-        tx1.commit();
-        session.close();
-    }
-
-    public void delete(User user) {
-        Session session = HibernateUtil.getSessionFactory().openSession();
-        Transaction tx1 = session.beginTransaction();
-        session.delete(user);
-        tx1.commit();
-        session.close();
+        }
     }
 }
