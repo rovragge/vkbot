@@ -134,7 +134,7 @@ public class CallbackApiHandler extends CallbackApi {
 
 
 //                    while (!list.add(random.nextInt())) {}
-                                int rnd = 0;
+                                int rnd;
                                 do {
                                     rnd = random.nextInt();
                                 } while (!list.add(rnd));
@@ -189,7 +189,7 @@ public class CallbackApiHandler extends CallbackApi {
                     if (d) sendMessage(vkID, "ввел " + payload + "|" + key, user.getSecretKeyboard());
                     if (user.getSecretLength() - 1 == 0) {
                         if (user.getSecret().equals(user.getSecretExpected())) {
-                            sendMessage(vkID, "Велком брат", null);
+                            sendMessage(vkID, "Аутентификация успешна", null);
                             user.setDialogState(user.getSecretTargetState());
                             infoAboutState(message.getFromId(), user);
                         } else {
@@ -213,7 +213,7 @@ public class CallbackApiHandler extends CallbackApi {
         }
     }
 
-    public void sayHello(int id,User user){
+    private void sayHello(int id, User user){
         sendMessage(id, "Привет ты в истоках", KeyboardFabric.generateEmptyKeyBoard());
         try {
                 vkclient.messages().send(actor)
@@ -230,7 +230,7 @@ public class CallbackApiHandler extends CallbackApi {
         infoAboutState(id,user);
     }
 
-    public void infoAboutState(int id,User user){
+    private void infoAboutState(int id, User user){
         if (d) sendMessage(id, "Ты как бы тут", null);
         List<Transitions> transitions = user.getDialogState().getTransitions();
         List<String> keys = new ArrayList<>();
@@ -249,12 +249,12 @@ public class CallbackApiHandler extends CallbackApi {
         sendMessage(id, message, kb);
     }
 
-    public void errorMessageState(int id,User user){
+    private void errorMessageState(int id, User user){
         sendMessage(id, wrongWordMessage, null);
         infoAboutState(id,user);
     }
 
-    public void saveMessage(Integer id, String text, User user, DialogState state) {
+    private void saveMessage(Integer id, String text, User user, DialogState state) {
         MessageVK message = new MessageVK();
         message.setMessageId(id);
         message.setContent(text);
@@ -263,7 +263,7 @@ public class CallbackApiHandler extends CallbackApi {
         messageDao.save(message);
     }
 
-    public void sendMessage(int userId,String message, String kb) {
+    private void sendMessage(int userId, String message, String kb) {
             try {
 
                 if (kb != null) {
