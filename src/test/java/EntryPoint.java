@@ -1,6 +1,4 @@
 import com.google.gson.JsonObject;
-import dao.UserDao;
-import model.User;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
@@ -30,11 +28,6 @@ public class EntryPoint {
     @Test
     public void hibernateTest(){
 
-        UserDao userDao = new UserDao();
-        User user = new User();
-        //GET USER
-        User user1 = userDao.findByVkID(25788799);
-        int bp = 42;
     }
 
     @Test

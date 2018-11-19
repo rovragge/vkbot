@@ -8,6 +8,7 @@ import dao.*;
 import model.*;
 
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -51,7 +52,8 @@ public class CallbackApiHandler extends CallbackApi {
                 sendMessage(vkID,dontKnowYouMessage,null);
             }
         } else {
-            if (user.getDialogState() == null || message.getBody().equals("Начать") ) {
+            DialogState currentState = user.getDialogState();
+            if (currentState == null || message.getBody().equals("Начать") ) {
                 sendMessage(vkID,gotoBeginingMessage,null);
                 DialogState state = dialogStateDao.findById(1L);
                 user.setDialogState(state);
@@ -60,7 +62,7 @@ public class CallbackApiHandler extends CallbackApi {
                 return;
             }
 
-            if (user.getDialogState().getId() == 8L) {
+            if (currentState.getId() == 666L) {
 
                 if (user.getCurrentQuestion() != null) {
                     SummaryResult res = new SummaryResult();
@@ -100,17 +102,25 @@ public class CallbackApiHandler extends CallbackApi {
 
 
                 if (user.getSecretLength() == 0) {
-                    DialogState state = user.getDialogState();
-                    List<Transitions> transitions = state.getTransitions();
-                    String mes = message.getBody();
+                    List<Transitions> transitions = currentState.getTransitions();
+                    String msg = message.getBody();
                     Optional<Transitions> transition = transitions.stream()
-                            .filter(tr -> tr.getRegexp().equals(mes)).findFirst();
+                            .filter(tr -> {
+                                if (tr.isRegex()){
+                                    Pattern pattern = Pattern.compile(tr.getMessage());
+                                    Matcher matcher = pattern.matcher(msg);
+                                    return matcher.matches();
+                                }
+                                else {
+                                    return tr.getMessage().equals(msg);
+                                }
+                            }).findFirst();
 
                     if (transition.isPresent()) {
                         DialogState target = transition.get().getTargetDialogState();
 
 
-                        if (transition.get().getAuth()) {
+                        if (transition.get().isAuth()) {
                             //enter auth mode
                             if (d) sendMessage(message.getFromId(), "secret length == 0 ", null);
                             if (d) sendMessage(message.getFromId(), "enter secret zone for length 4", null);
@@ -138,6 +148,7 @@ public class CallbackApiHandler extends CallbackApi {
                             int n = 9999 - 1111 + 1;
                             int i = random.nextInt() % n;
                             int randomNum = 1111 + Math.abs(i);
+                            randomNum = Integer.parseInt(String.valueOf(randomNum).replace('0', (char) (random.nextInt() % 10)));
                             String keyboard = KeyboardFabric.generateSecretKeyBoard(obj.get("encode").getAsJsonObject());
                             user.setSecret("");
                             user.setSecretExpected(String.valueOf(randomNum));
@@ -156,7 +167,7 @@ public class CallbackApiHandler extends CallbackApi {
                             user.setDialogState(target);
                             userDao.update(user);
 
-                            if (user.getDialogState().getId() == 8L) {
+                            if (target.getId() == 666L) {
                                 messageNew(message.getUserId(), message);
                                 return;
                             }
@@ -196,7 +207,7 @@ public class CallbackApiHandler extends CallbackApi {
                         sendMessage(vkID, "Осталось еще " + String.valueOf(user.getSecretLength()) + " символов", user.getSecretKeyboard());
                     }
                 }
-                saveMessage(message.getId(), message.getBody(), user);
+                saveMessage(message.getId(), message.getBody(), user, currentState);
             }
             userDao.update(user);
         }
@@ -223,11 +234,19 @@ public class CallbackApiHandler extends CallbackApi {
         if (d) sendMessage(id, "Ты как бы тут", null);
         List<Transitions> transitions = user.getDialogState().getTransitions();
         List<String> keys = new ArrayList<>();
-        for (Transitions tans:transitions) {
-            keys.add(tans.getRegexp());
+        for (Transitions trs:transitions) {
+            if (!trs.isRegex())
+                keys.add(trs.getMessage());
         }
         String kb = KeyboardFabric.generatePublicKeyBoard(keys);
-        sendMessage(id, user.getDialogState().getMessage(), kb);
+        DialogState currentState = user.getDialogState();
+        String message = currentState.getMessage();
+        if (currentState.getId() == 17L){
+            String number = messageDao.findLastByUserAndState(user,14L).getContent();
+            String summ = messageDao.findLastByUserAndState(user,15L).getContent();
+            message = String.format(message,summ,number);
+        }
+        sendMessage(id, message, kb);
     }
 
     public void errorMessageState(int id,User user){
@@ -235,11 +254,12 @@ public class CallbackApiHandler extends CallbackApi {
         infoAboutState(id,user);
     }
 
-    public void saveMessage(Integer id, String text, User user) {
+    public void saveMessage(Integer id, String text, User user, DialogState state) {
         MessageVK message = new MessageVK();
         message.setMessageId(id);
         message.setContent(text);
         message.setUser(user);
+        message.setState(state);
         messageDao.save(message);
     }
 

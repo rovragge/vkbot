@@ -18,11 +18,14 @@ public class Transitions {
     @JoinColumn(name="dialog_state_id")
     private DialogState dialogState ;
 
-    @Column(name = "regexp")
-    private String regexp;
+    @Column(name = "message")
+    private String message;
 
     @Column(name = "auth")
-    private Boolean auth;
+    private boolean auth;
+
+    @Column(name = "regex")
+    private boolean regex;
 
     @ManyToOne
     @JoinColumn(name="target_dialog_state_id")
