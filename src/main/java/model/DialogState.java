@@ -22,5 +22,6 @@ public class DialogState {
     private String keyboard;
 
     @OneToMany(mappedBy = "dialogState", fetch = FetchType.EAGER)
+    @OrderBy("id")
     private List<Transitions> transitions;
 }

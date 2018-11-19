@@ -28,6 +28,11 @@ public class CallbackApiHandler extends CallbackApi {
     private String wrongPasswordMessage = "Неверный пароль";
     private String wrongWordMessage = "Неизвестный запрос";
 
+    private String atmPhoto = "";
+    private String bankPhoto = "";
+    private String helloPhoto = "";
+
+
     VkApiClient vkclient = null;
 
     GroupActor actor = null;
@@ -37,221 +42,229 @@ public class CallbackApiHandler extends CallbackApi {
 //        System.out.println(message.toString());
         Integer vkID = message.getFromId();
         User user = userDao.findByVkID(vkID);
-        if (user == null ){
-            if (message.getBody() != null  && message.getBody().equals("Начать")){
+        if (user == null) {
+            if (message.getBody() != null && message.getBody().equals("Начать")) {
                 user = new User();
                 user.setVkID(vkID);
                 DialogState state = dialogStateDao.findById(1L);
                 user.setDialogState(state);
                 user.setSecretLength(0);
+
+//                List<Question> =
+
                 user.setQuestions("");
-                sendMessage(user.getVkID(),state.getMessage(),null);
+                sendFixedPhoto(user.getVkID(), "", helloPhoto);
+                //infoAboutState(user.getVkID(), user);
                 userDao.save(user);
-                sayHello(message.getFromId(),user);
             } else {
-                sendMessage(vkID,dontKnowYouMessage,null);
-            }
-        } else {
-            DialogState currentState = user.getDialogState();
-            if (currentState == null || message.getBody().equals("Начать") ) {
-                sendMessage(vkID,gotoBeginingMessage,null);
-                DialogState state = dialogStateDao.findById(1L);
-                user.setDialogState(state);
-                userDao.update(user);
-                sayHello(message.getFromId(),user);
+                sendMessage(vkID, dontKnowYouMessage, null);
                 return;
             }
+        }
 
-            if (currentState.getId() == 666L) {
+        DialogState currentState = user.getDialogState();
 
-                if (user.getCurrentQuestion() != null) {
-                    SummaryResult res = new SummaryResult();
-                    res.setAnswer(message.getBody());
-                    res.setQuestion(user.getCurrentQuestion());
-                    res.setUser(user);
-                    summaryResultDao.save(res);
-                    user.setCurrentQuestion(null);
-                    userDao.update(user);
-                }
+        if (currentState.getId() == 19L) {
+            questionsMode(user, message);
+            return;
+        }
 
-                List<String> res = Arrays.asList(user.getQuestions().split(Pattern.quote("|")));
-                res = res.stream().filter(s -> !s.equals("")).collect(Collectors.toList());
+        if (currentState == null || message.getBody().equals("Сброс")) {
+            sendMessage(vkID, gotoBeginingMessage, null);
+            DialogState state = dialogStateDao.findById(1L);
+            user.setDialogState(state);
+            userDao.update(user);
+            infoAboutState(message.getFromId(), user);
+            return;
+        }
 
-                if (res.isEmpty()) {
-                    DialogState state = dialogStateDao.findById(1L);
-                    user.setDialogState(state);
-                    userDao.update(user);
-                    sendMessage(message.getFromId(),"Для Вас нет новых вопросов",null);
-                    infoAboutState(message.getFromId(), user);
-                } else {
+        if (user.getSecretLength() == 0) {
+            List<Transitions> transitions = currentState.getTransitions();
+            String msg = message.getBody();
+            Optional<Transitions> transition = transitions.stream()
+                    .filter(tr -> {
+                        if (tr.isRegex()) {
+                            Pattern pattern = Pattern.compile(tr.getMessage());
+                            Matcher matcher = pattern.matcher(msg);
+                            return matcher.matches();
+                        } else {
+                            return tr.getMessage().equals(msg);
+                        }
+                    }).findFirst();
 
-                        String id = res.get(0);
-
-                        String newQuestions = res.stream().skip(1).collect(Collectors.joining("|"));
-                        user.setQuestions(newQuestions);
-                        userDao.update(user);
-                        Question question = questionDao.findById(Long.parseLong(id));
-                        user.setCurrentQuestion(question);
-                        userDao.update(user);
-                        List<String> ress = Arrays.asList(question.getAnswers().split(Pattern.quote("|")));
-
-                        String kb = KeyboardFabric.generatePublicKeyBoard(ress);
-                        sendMessage(message.getFromId(),question.getQuestion(),kb);
-                }
-            } else {
+            if (transition.isPresent()) {
+                DialogState target = transition.get().getTargetDialogState();
 
 
-                if (user.getSecretLength() == 0) {
-                    List<Transitions> transitions = currentState.getTransitions();
-                    String msg = message.getBody();
-                    Optional<Transitions> transition = transitions.stream()
-                            .filter(tr -> {
-                                if (tr.isRegex()){
-                                    Pattern pattern = Pattern.compile(tr.getMessage());
-                                    Matcher matcher = pattern.matcher(msg);
-                                    return matcher.matches();
-                                }
-                                else {
-                                    return tr.getMessage().equals(msg);
-                                }
-                            }).findFirst();
+                if (transition.get().isAuth()) {
+                    //enter auth mode
+                    if (d) sendMessage(message.getFromId(), "secret length == 0 ", null);
+                    if (d) sendMessage(message.getFromId(), "enter secret zone for length 4", null);
 
-                    if (transition.isPresent()) {
-                        DialogState target = transition.get().getTargetDialogState();
-
-
-                        if (transition.get().isAuth()) {
-                            //enter auth mode
-                            if (d) sendMessage(message.getFromId(), "secret length == 0 ", null);
-                            if (d) sendMessage(message.getFromId(), "enter secret zone for length 4", null);
-
-                            Random random = new Random();
-                            JsonObject obj = new JsonObject();
-                            Set<Integer> list = new HashSet<>();
-                            JsonObject encode = new JsonObject();
-                            JsonObject decode = new JsonObject();
-                            for (int i = 0; i < 9; i++) {
+                    Random random = new Random();
+                    JsonObject obj = new JsonObject();
+                    Set<Integer> list = new HashSet<>();
+                    JsonObject encode = new JsonObject();
+                    JsonObject decode = new JsonObject();
+                    for (int i = 0; i < 9; i++) {
 
 
 //                    while (!list.add(random.nextInt())) {}
-                                int rnd;
-                                do {
-                                    rnd = random.nextInt();
-                                } while (!list.add(rnd));
+                        int rnd;
+                        do {
+                            rnd = random.nextInt();
+                        } while (!list.add(rnd));
 
-                                encode.addProperty(String.valueOf(i + 1), String.valueOf(rnd));
-                                decode.addProperty(String.valueOf(rnd), String.valueOf(i + 1));
-                            }
+                        encode.addProperty(String.valueOf(i + 1), String.valueOf(rnd));
+                        decode.addProperty(String.valueOf(rnd), String.valueOf(i + 1));
+                    }
 
-                            obj.add("encode", encode);
-                            obj.add("decode", decode);
-                            int n = 9999 - 1111 + 1;
-                            int i = random.nextInt() % n;
-                            int randomNum = 1111 + Math.abs(i);
-                            randomNum = Integer.parseInt(String.valueOf(randomNum).replace('0', (char) (random.nextInt() % 10)));
-                            String keyboard = KeyboardFabric.generateSecretKeyBoard(obj.get("encode").getAsJsonObject());
-                            user.setSecret("");
-                            user.setSecretExpected(String.valueOf(randomNum));
-                            user.setSecretLength(4);
-                            user.setSecretTargetState(target);
-                            user.setSecretKeys(obj.toString());
-                            user.setSecretKeyboard(keyboard);
+                    obj.add("encode", encode);
+                    obj.add("decode", decode);
+                    int n = 9999 - 1111 + 1;
+                    int i = random.nextInt() % n;
+                    int randomNum = 1111 + Math.abs(i);
+                    randomNum = Integer.parseInt(String.valueOf(randomNum).replace('0', (char) (random.nextInt() % 10)));
+                    String keyboard = KeyboardFabric.generateSecretKeyBoard(obj.get("encode").getAsJsonObject());
+                    user.setSecret("");
+                    user.setSecretExpected(String.valueOf(randomNum));
+                    user.setSecretLength(4);
+                    user.setSecretTargetState(target);
+                    user.setSecretKeys(obj.toString());
+                    user.setSecretKeyboard(keyboard);
 //                userDao.update(user);
-                            sendMessage(message.getFromId(), "Enter PIN", keyboard);
-                            sendMessage(message.getFromId(), "Expecting " + user.getSecretExpected(), keyboard);
-                            if (d) sendMessage(message.getFromId(), "Encode", keyboard);
-                            if (d) sendMessage(message.getFromId(), encode.toString(), keyboard);
-                            if (d) sendMessage(message.getFromId(), "Decode", keyboard);
-                            if (d) sendMessage(message.getFromId(), decode.toString(), keyboard);
-                        } else {
-                            user.setDialogState(target);
-                            userDao.update(user);
-
-                            if (target.getId() == 666L) {
-                                messageNew(message.getUserId(), message);
-                                return;
-                            }
-
-                            infoAboutState(message.getFromId(), user);
-                        }
-
-                    } else {
-                        errorMessageState(message.getFromId(), user);
-                    }
+                    sendMessage(message.getFromId(), "Enter PIN", keyboard);
+                    sendMessage(message.getFromId(), "Expecting " + user.getSecretExpected(), keyboard);
+                    if (d) sendMessage(message.getFromId(), "Encode", keyboard);
+                    if (d) sendMessage(message.getFromId(), encode.toString(), keyboard);
+                    if (d) sendMessage(message.getFromId(), "Decode", keyboard);
+                    if (d) sendMessage(message.getFromId(), decode.toString(), keyboard);
                 } else {
-                    String strPayload = message.getActionText();
-                    JsonParser jsonParser = new JsonParser();
-                    String payload = jsonParser.parse(strPayload).getAsJsonObject().get("val").getAsString();
+                    user.setDialogState(target);
+                    userDao.update(user);
 
-                    String strKeys = user.getSecretKeys();
-                    String key = jsonParser.parse(strKeys).getAsJsonObject().getAsJsonObject("decode").get(payload).getAsString();
-                    user.setSecret(user.getSecret() + key);
-                    if (d) sendMessage(vkID, "ввел " + payload + "|" + key, user.getSecretKeyboard());
-                    if (user.getSecretLength() - 1 == 0) {
-                        if (user.getSecret().equals(user.getSecretExpected())) {
-                            sendMessage(vkID, "Аутентификация успешна", null);
-                            user.setDialogState(user.getSecretTargetState());
-                            infoAboutState(message.getFromId(), user);
-                        } else {
-                            if (d) sendMessage(vkID, "Пароль выучи сука", null);
-                            if (d) sendMessage(vkID, "Надо было" + user.getSecretExpected(), null);
-                            if (d) sendMessage(vkID, "А ты ввел" + user.getSecret(), null);
-                            if (d) sendMessage(vkID, "Сиди где сидел", null);
-                            sendMessage(vkID, wrongPasswordMessage, null);
-                            infoAboutState(message.getFromId(), user);
-                        }
-                        user.setSecretLength(0);
-                    } else {
-                        user.setSecretLength(user.getSecretLength() - 1);
-
-                        sendMessage(vkID, "Осталось еще " + String.valueOf(user.getSecretLength()) + " символов", user.getSecretKeyboard());
+                    if (target.getId() == 19L) {
+                        questionsMode(user, message);
+//                            messageNew(message.getUserId(), message);
+                        return;
                     }
+
+                    infoAboutState(message.getFromId(), user);
                 }
-                saveMessage(message.getId(), message.getBody(), user, currentState);
+
+            } else {
+                errorMessageState(message.getFromId(), user);
             }
+        } else {
+            String strPayload = message.getActionText();
+            JsonParser jsonParser = new JsonParser();
+            String payload = jsonParser.parse(strPayload).getAsJsonObject().get("val").getAsString();
+
+            String strKeys = user.getSecretKeys();
+            String key = jsonParser.parse(strKeys).getAsJsonObject().getAsJsonObject("decode").get(payload).getAsString();
+            user.setSecret(user.getSecret() + key);
+            if (d) sendMessage(vkID, "ввел " + payload + "|" + key, user.getSecretKeyboard());
+            if (user.getSecretLength() - 1 == 0) {
+                if (user.getSecret().equals(user.getSecretExpected())) {
+                    sendMessage(vkID, "Аутентификация успешна", null);
+                    user.setDialogState(user.getSecretTargetState());
+                    infoAboutState(message.getFromId(), user);
+                } else {
+                    sendMessage(vkID, wrongPasswordMessage, null);
+                    infoAboutState(message.getFromId(), user);
+                }
+                user.setSecretLength(0);
+            } else {
+                user.setSecretLength(user.getSecretLength() - 1);
+
+                sendMessage(vkID, "Осталось еще " + String.valueOf(user.getSecretLength()) + " символов", user.getSecretKeyboard());
+            }
+        }
+        saveMessage(message.getId(), message.getBody(), user, currentState);
+
+        userDao.update(user);
+
+    }
+
+    private void questionsMode(User user, Message message) {
+
+        List<String> res = Arrays.asList(user.getQuestions().split(Pattern.quote("|")));
+        res = res.stream().filter(s -> !s.equals("")).collect(Collectors.toList());
+
+        if (message.getBody().equals("Продолжить позже")) {
+            DialogState state = dialogStateDao.findById(1L);
+            user.setDialogState(state);
+            userDao.update(user);
+            infoAboutState(message.getFromId(), user);
+            return;
+        }
+
+        if (user.getCurrentQuestion() != null) {
+            SummaryResult sres = new SummaryResult();
+            sres.setAnswer(message.getBody());
+            sres.setQuestion(user.getCurrentQuestion());
+            sres.setUser(user);
+            summaryResultDao.save(sres);
+            String mesToDelete = user.getCurrentQuestion().getId().toString();
+            user.setCurrentQuestion(null);
+
+            String newQuestions = res.stream().skip(1).collect(Collectors.joining("|"));
+            user.setQuestions(newQuestions);
             userDao.update(user);
         }
-    }
 
-    private void sayHello(int id, User user){
-        sendMessage(id, "Привет ты в истоках", KeyboardFabric.generateEmptyKeyBoard());
-        try {
-                vkclient.messages().send(actor)
-                        .message("Вот моя карта")
-                        .peerId(id)
-                        .userId(id)
-                        .unsafeParam("keyboard",KeyboardFabric.generateEmptyKeyBoard())
-                        .attachment("photo-173460334_456239017")
-                        .execute();
-        } catch(Exception ex) {
-            String mmm = ex.getLocalizedMessage();
-            System.out.println(mmm);
+
+
+        if (res.isEmpty()) {
+            DialogState state = dialogStateDao.findById(1L);
+            user.setDialogState(state);
+            userDao.update(user);
+            sendMessage(message.getFromId(), "Для Вас нет новых вопросов", null);
+            infoAboutState(message.getFromId(), user);
+        } else {
+
+            String id = res.get(0);
+            Question question = questionDao.findById(Long.parseLong(id));
+            user.setCurrentQuestion(question);
+            userDao.update(user);
+            List<String> ress = Arrays.asList(question.getAnswers().split(Pattern.quote("|")));
+            ress.add("Продолжить позже");
+            String kb = KeyboardFabric.generatePublicKeyBoard(ress);
+            sendMessage(message.getFromId(), question.getQuestion(), kb);
         }
-        infoAboutState(id,user);
     }
 
-    private void infoAboutState(int id, User user){
+
+    private void infoAboutState(int id, User user) {
         if (d) sendMessage(id, "Ты как бы тут", null);
         List<Transitions> transitions = user.getDialogState().getTransitions();
         List<String> keys = new ArrayList<>();
-        for (Transitions trs:transitions) {
+        for (Transitions trs : transitions) {
             if (!trs.isRegex())
                 keys.add(trs.getMessage());
         }
         String kb = KeyboardFabric.generatePublicKeyBoard(keys);
         DialogState currentState = user.getDialogState();
         String message = currentState.getMessage();
-        if (currentState.getId() == 17L){
-            String number = messageDao.findLastByUserAndState(user,14L).getContent();
-            String summ = messageDao.findLastByUserAndState(user,15L).getContent();
-            message = String.format(message,summ,number);
+        if (currentState.getId() == 17L) {
+            String number = messageDao.findLastByUserAndState(user, 14L).getContent();
+            String summ = messageDao.findLastByUserAndState(user, 15L).getContent();
+            message = String.format(message, summ, number);
         }
         sendMessage(id, message, kb);
+        if (currentState.getId() == 2L) {
+            sendFixedPhoto(id,atmPhoto,kb);
+            sendFixedDoc(id,"",kb);
+        }
+        if (currentState.getId() == 3L) {
+            sendFixedPhoto(id,bankPhoto,kb);
+            sendFixedDoc(id,"",kb);
+        }
     }
 
-    private void errorMessageState(int id, User user){
+    private void errorMessageState(int id, User user) {
         sendMessage(id, wrongWordMessage, null);
-        infoAboutState(id,user);
+        infoAboutState(id, user);
     }
 
     private void saveMessage(Integer id, String text, User user, DialogState state) {
@@ -264,29 +277,52 @@ public class CallbackApiHandler extends CallbackApi {
     }
 
     private void sendMessage(int userId, String message, String kb) {
-            try {
+        try {
 
-                if (kb != null) {
-                    vkclient.messages().send(actor)
-                            .message(message)
-                            .peerId(userId)
-                            .userId(userId)
-                            .unsafeParam("keyboard",kb)
-                            .execute();
-                } else {
-                    vkclient.messages().send(actor)
-                            .message(message)
-                            .peerId(userId)
-                            .userId(userId)
-                            .unsafeParam("keyboard",KeyboardFabric.generateEmptyKeyBoard())
-                            .execute();
-                }
+            if (kb == null) {
+                kb = KeyboardFabric.generateEmptyKeyBoard();
+            }
 
-        } catch(Exception ex) {
+            vkclient.messages().send(actor)
+                    .message(message)
+                    .peerId(userId)
+                    .userId(userId)
+                    .unsafeParam("keyboard", kb)
+                    .execute();
+
+        } catch (Exception ex) {
             String mmm = ex.getLocalizedMessage();
             System.out.println(mmm);
         }
     }
 
+    private void sendFixedPhoto(int userId, String photoId, String kb) {
+        try {
+            vkclient.messages().send(actor)
+                    .message("Фотография")
+                    .peerId(userId)
+                    .userId(userId)
+                    .unsafeParam("keyboard", kb)
+                    .attachment("photo-" + photoId)
+                    .execute();
+        } catch (Exception ex) {
+            String mmm = ex.getLocalizedMessage();
+            System.out.println(mmm);
+        }
+    }
 
+    private void sendFixedDoc(int userId, String photoId, String kb) {
+        try {
+            vkclient.messages().send(actor)
+                    .message("Документ")
+                    .peerId(userId)
+                    .userId(userId)
+                    .unsafeParam("keyboard", kb)
+                    .attachment("video-25788799_133410867")
+                    .execute();
+        } catch (Exception ex) {
+            String mmm = ex.getLocalizedMessage();
+            System.out.println(mmm);
+        }
+    }
 }

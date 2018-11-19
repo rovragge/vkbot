@@ -17,7 +17,7 @@ public class KeyboardFabric {
            action.addProperty("payload",payload.toString());
            action.addProperty("label",i);
            button.add("action",action);
-           button.addProperty("color","negative");
+           button.addProperty("color","primary");
            return button;
        }
 
