@@ -27,9 +27,6 @@ public class CallbackApiHandler extends CallbackApi {
     private String gotoBeginingMessage = "Сброс бота в начальное состояние";
     private String wrongPasswordMessage = "Неверный пароль";
     private String wrongWordMessage = "Неизвестный запрос";
-
-    private String atmPhoto = "";
-    private String bankPhoto = "";
     private String helloPhoto = "";
 
 
@@ -69,10 +66,11 @@ public class CallbackApiHandler extends CallbackApi {
             return;
         }
 
-        if (currentState == null || message.getBody().equals("Сброс")) {
+        if (message.getBody().equals("Сброс")) {
             sendMessage(vkID, gotoBeginingMessage, null);
             DialogState state = dialogStateDao.findById(1L);
             user.setDialogState(state);
+            user.setSecretLength(0);
             userDao.update(user);
             infoAboutState(message.getFromId(), user);
             return;
@@ -133,8 +131,9 @@ public class CallbackApiHandler extends CallbackApi {
                     user.setSecretKeys(obj.toString());
                     user.setSecretKeyboard(keyboard);
 //                userDao.update(user);
-                    sendMessage(message.getFromId(), "Enter PIN", keyboard);
-                    sendMessage(message.getFromId(), "Expecting " + user.getSecretExpected(), keyboard);
+                    sendMessage(message.getFromId(), "Введите PIN", keyboard);
+                    sendMessage(message.getFromId(), "Данный код пришел Вам в смс " + user.getSecretExpected(), keyboard);
+                    sendFixedPhoto(user.getVkID(), "173373756_456239020", keyboard);
                     if (d) sendMessage(message.getFromId(), "Encode", keyboard);
                     if (d) sendMessage(message.getFromId(), encode.toString(), keyboard);
                     if (d) sendMessage(message.getFromId(), "Decode", keyboard);
@@ -142,13 +141,6 @@ public class CallbackApiHandler extends CallbackApi {
                 } else {
                     user.setDialogState(target);
                     userDao.update(user);
-
-                    if (target.getId() == 19L) {
-                        questionsMode(user, message);
-//                            messageNew(message.getUserId(), message);
-                        return;
-                    }
-
                     infoAboutState(message.getFromId(), user);
                 }
 
@@ -163,7 +155,6 @@ public class CallbackApiHandler extends CallbackApi {
             String strKeys = user.getSecretKeys();
             String key = jsonParser.parse(strKeys).getAsJsonObject().getAsJsonObject("decode").get(payload).getAsString();
             user.setSecret(user.getSecret() + key);
-            if (d) sendMessage(vkID, "ввел " + payload + "|" + key, user.getSecretKeyboard());
             if (user.getSecretLength() - 1 == 0) {
                 if (user.getSecret().equals(user.getSecretExpected())) {
                     sendMessage(vkID, "Аутентификация успешна", null);
@@ -187,10 +178,6 @@ public class CallbackApiHandler extends CallbackApi {
     }
 
     private void questionsMode(User user, Message message) {
-
-        List<String> res = Arrays.asList(user.getQuestions().split(Pattern.quote("|")));
-        res = res.stream().filter(s -> !s.equals("")).collect(Collectors.toList());
-
         if (message.getBody().equals("Продолжить позже")) {
             DialogState state = dialogStateDao.findById(1L);
             user.setDialogState(state);
@@ -199,35 +186,34 @@ public class CallbackApiHandler extends CallbackApi {
             return;
         }
 
-        if (user.getCurrentQuestion() != null) {
-            SummaryResult sres = new SummaryResult();
-            sres.setAnswer(message.getBody());
-            sres.setQuestion(user.getCurrentQuestion());
-            sres.setUser(user);
-            summaryResultDao.save(sres);
-            String mesToDelete = user.getCurrentQuestion().getId().toString();
-            user.setCurrentQuestion(null);
+        List<String> questionIds = Arrays.asList(user.getQuestions().split(Pattern.quote("|")));
+        questionIds = questionIds.stream().filter(s -> !s.equals("")).collect(Collectors.toList());
 
-            String newQuestions = res.stream().skip(1).collect(Collectors.joining("|"));
+        if (user.getCurrentQuestion() != null && !message.getBody().equals("Пройти опрос")) {
+            SummaryResult summaryResult = new SummaryResult();
+            summaryResult.setAnswer(message.getBody());
+            summaryResult.setQuestion(user.getCurrentQuestion());
+            summaryResult.setUser(user);
+            summaryResultDao.save(summaryResult);
+            questionIds = questionIds.stream().skip(1).collect(Collectors.toList());
+            String newQuestions = questionIds.stream().collect(Collectors.joining("|"));
             user.setQuestions(newQuestions);
             userDao.update(user);
         }
 
-
-
-        if (res.isEmpty()) {
+        if (questionIds.isEmpty()) {
             DialogState state = dialogStateDao.findById(1L);
             user.setDialogState(state);
             userDao.update(user);
             sendMessage(message.getFromId(), "Для Вас нет новых вопросов", null);
             infoAboutState(message.getFromId(), user);
         } else {
-
-            String id = res.get(0);
+            String id = questionIds.get(0);
             Question question = questionDao.findById(Long.parseLong(id));
             user.setCurrentQuestion(question);
             userDao.update(user);
             List<String> ress = Arrays.asList(question.getAnswers().split(Pattern.quote("|")));
+            ress = new ArrayList<>(ress);
             ress.add("Продолжить позже");
             String kb = KeyboardFabric.generatePublicKeyBoard(ress);
             sendMessage(message.getFromId(), question.getQuestion(), kb);
@@ -251,14 +237,27 @@ public class CallbackApiHandler extends CallbackApi {
             String summ = messageDao.findLastByUserAndState(user, 15L).getContent();
             message = String.format(message, summ, number);
         }
+
+        if (currentState.getId() == 12L) {
+            Double creditSum = Double.parseDouble(messageDao.findLastByUserAndState(user, 9L).getContent());
+            Double startupSum = Double.parseDouble(messageDao.findLastByUserAndState(user, 10L).getContent());
+            Integer term = Integer.parseInt(messageDao.findLastByUserAndState(user, 11L).getContent());
+            Double percent = 10.8;
+            Double monthlyPay = (creditSum - startupSum) * (1 - percent / 100) / term;
+            Double salary = monthlyPay * 1.5;
+
+            message = String.format(message, monthlyPay, percent, salary, creditSum);
+        }
+
         sendMessage(id, message, kb);
         if (currentState.getId() == 2L) {
-            sendFixedPhoto(id,atmPhoto,kb);
-            sendFixedDoc(id,"",kb);
+            sendFixedPhoto(id, "173373756_456239019", kb);
         }
         if (currentState.getId() == 3L) {
-            sendFixedPhoto(id,bankPhoto,kb);
-            sendFixedDoc(id,"",kb);
+            sendFixedPhoto(id, "173373756_456239018", kb);
+        }
+        if (currentState.getId() == 18L) {
+            sendFixedDoc(id, "25788799_481506692", kb);
         }
     }
 
@@ -298,8 +297,11 @@ public class CallbackApiHandler extends CallbackApi {
 
     private void sendFixedPhoto(int userId, String photoId, String kb) {
         try {
+            if (kb == null) {
+                kb = KeyboardFabric.generateEmptyKeyBoard();
+            }
             vkclient.messages().send(actor)
-                    .message("Фотография")
+                    .message(" ")
                     .peerId(userId)
                     .userId(userId)
                     .unsafeParam("keyboard", kb)
@@ -311,14 +313,17 @@ public class CallbackApiHandler extends CallbackApi {
         }
     }
 
-    private void sendFixedDoc(int userId, String photoId, String kb) {
+    private void sendFixedDoc(int userId, String docId, String kb) {
         try {
+            if (kb == null) {
+                kb = KeyboardFabric.generateEmptyKeyBoard();
+            }
             vkclient.messages().send(actor)
-                    .message("Документ")
+                    .message(" ")
                     .peerId(userId)
                     .userId(userId)
                     .unsafeParam("keyboard", kb)
-                    .attachment("video-25788799_133410867")
+                    .attachment("doc" + docId)
                     .execute();
         } catch (Exception ex) {
             String mmm = ex.getLocalizedMessage();

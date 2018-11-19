@@ -1,6 +1,5 @@
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import jdk.nashorn.internal.runtime.JSONFunctions;
 
 import java.util.List;
 
@@ -28,7 +27,7 @@ public class KeyboardFabric {
            for(int i = 0; i<3;i++){
                JsonArray row = new JsonArray();
                for(int j = 0; j<3;j++){
-                   row.add(generateButton("*",keys.get(String.valueOf(i*3+j+1)).getAsString()));
+                   row.add(generateButton("*", keys.get(String.valueOf(i*3+j+1)).getAsString()));
                }
                cols.add(row);
            }
@@ -36,10 +35,7 @@ public class KeyboardFabric {
            return keyboard.toString();
        }
 
-    public static String generatePublicKeyBoard(List<String> v) {
-
-
-        List<String> variants = v;
+    public static String generatePublicKeyBoard(List<String> variants) {
 
         JsonObject keyboard = new JsonObject();
         keyboard.addProperty("one_time",true);
@@ -48,7 +44,7 @@ public class KeyboardFabric {
         int i = 0;
         JsonArray row = new JsonArray();
 
-        for (String str: v) {
+        for (String str: variants) {
             if (i == 3){
                 i=0;
                 cols.add(row);
