@@ -23,11 +23,11 @@ public class CallbackApiHandler extends CallbackApi {
     private Boolean d = false;
 
 
-    private String dontKnowYouMessage = "Я тебя не знаю. Скажи мне \"Начать\"";
+    private String dontKnowYouMessage = "Давайте сначала поздороваемся :) Скажите мне \"Привет!\"";
     private String gotoBeginingMessage = "Сброс бота в начальное состояние";
     private String wrongPasswordMessage = "Неверный пароль";
     private String wrongWordMessage = "Неизвестный запрос";
-    private String helloPhoto = "";
+    private String helloMessage = "Если что то пойдет не так, меня можно сбросить в начальное состояние, сказав \"Сброс\"";
 
 
     VkApiClient vkclient = null;
@@ -40,23 +40,25 @@ public class CallbackApiHandler extends CallbackApi {
         Integer vkID = message.getFromId();
         User user = userDao.findByVkID(vkID);
         if (user == null) {
-            if (message.getBody() != null && message.getBody().equals("Начать")) {
+            if (message.getBody() != null && message.getBody().toLowerCase().equals("привет")) {
                 user = new User();
                 user.setVkID(vkID);
                 DialogState state = dialogStateDao.findById(1L);
                 user.setDialogState(state);
                 user.setSecretLength(0);
-
-//                List<Question> =
-
-                user.setQuestions("");
-                sendFixedPhoto(user.getVkID(), "", helloPhoto);
-                //infoAboutState(user.getVkID(), user);
+                List<Question> questions = questionDao.findAll();
+                String questionString = questions.stream()
+                        .map(Question::getId)
+                        .map(String::valueOf)
+                        .collect(Collectors.joining("|"));
+                user.setQuestions(questionString);
+                sendMessage(vkID, helloMessage, null);
+                infoAboutState(user.getVkID(), user);
                 userDao.save(user);
             } else {
                 sendMessage(vkID, dontKnowYouMessage, null);
-                return;
             }
+            return;
         }
 
         DialogState currentState = user.getDialogState();
@@ -66,7 +68,7 @@ public class CallbackApiHandler extends CallbackApi {
             return;
         }
 
-        if (message.getBody().equals("Сброс")) {
+        if (message.getBody().toLowerCase().equals("cброс")) {
             sendMessage(vkID, gotoBeginingMessage, null);
             DialogState state = dialogStateDao.findById(1L);
             user.setDialogState(state);
@@ -239,14 +241,19 @@ public class CallbackApiHandler extends CallbackApi {
         }
 
         if (currentState.getId() == 12L) {
-            Double creditSum = Double.parseDouble(messageDao.findLastByUserAndState(user, 9L).getContent());
-            Double startupSum = Double.parseDouble(messageDao.findLastByUserAndState(user, 10L).getContent());
-            Integer term = Integer.parseInt(messageDao.findLastByUserAndState(user, 11L).getContent());
-            Double percent = 10.8;
-            Double monthlyPay = (creditSum - startupSum) * (1 - percent / 100) / term;
-            Double salary = monthlyPay * 1.5;
-
-            message = String.format(message, monthlyPay, percent, salary, creditSum);
+            try {
+                Double creditSum = Double.parseDouble(messageDao.findLastByUserAndState(user, 9L).getContent());
+                Double startupSum = Double.parseDouble(messageDao.findLastByUserAndState(user, 10L).getContent());
+                Integer term = Integer.parseInt(messageDao.findLastByUserAndState(user, 11L).getContent());
+                Double percent = 10.8;
+                Double monthlyPay = (creditSum - startupSum) * (1 - percent / 100) / term;
+                Double salary = monthlyPay * 1.5;
+                message = String.format(message, monthlyPay, percent, salary, creditSum);
+            }
+            catch (Exception ex){
+                sendMessage(id, "Не удалось почитать, возможно вы что то ввели неправильно",kb);
+                return;
+            }
         }
 
         sendMessage(id, message, kb);

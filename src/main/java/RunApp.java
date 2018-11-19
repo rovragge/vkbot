@@ -9,10 +9,9 @@ import java.util.Properties;
 
 public class RunApp {
     public static void main(String[] args) {
+
         int curTS = SettingsManager.getTs();
         CallbackApiHandler handler = new CallbackApiHandler();
-
-
 
         Properties properties = new Properties();
         try {
